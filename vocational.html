@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+    <!-- PWA Setup -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FFB81C">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="view-transition" content="same-origin">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unifreire - ¡Tu puedes ser un Jaguar!</title>
+    <link rel="icon" href="assets/images/logo.webp">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="styles.css?v=2">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 6rem auto 4rem auto;
+            padding: 3rem 5%;
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .test-header h1 {
+            color: var(--unifreire-yellow);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .question {
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.5s ease;
+        }
+
+        .question h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--unifreire-green-light);
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .option-label {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+        }
+
+        .option-label:hover {
+            background: rgba(255, 184, 28, 0.1);
+            border-color: var(--unifreire-yellow);
+        }
+
+        .option-label input {
+            margin-right: 1rem;
+            accent-color: var(--unifreire-yellow);
+            transform: scale(1.2);
+        }
+
+        .result-box {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            border: 1px solid var(--unifreire-yellow);
+            border-radius: 12px;
+            background: rgba(0, 77, 54, 0.2);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .result-box h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-box .career-match {
+            font-size: 1.5rem;
+            color: var(--unifreire-yellow);
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+    
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+            transform: scale(1);
+        }
+        .option-btn:hover {
+            transform: scale(1.02);
+            background: rgba(255,255,255,0.15) !important;
+        }
+
+    </style>
+
+    <!-- Global Anti-Hack Security Script -->
+    <script>
+        // Disable Right Click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        
+        // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+        document.onkeydown = function(e) {
+            if(e.keyCode === 123 || e.code === "F12") return false;
+            if(e.ctrlKey && e.shiftKey && (e.code === "KeyI" || e.code === "KeyJ" || e.code === "KeyC")) return false;
+            if(e.ctrlKey && e.code === "KeyU") return false;
+            if(e.metaKey && e.altKey && (e.code === "KeyI" || e.code === "KeyJ" || e.code === "KeyC")) return false;
+            if(e.metaKey && e.code === "KeyU") return false;
+        };
+
+        // Anti-debugger loop (pauses attacker's console)
+        setInterval(function() {
+            const before = new Date().getTime();
+            debugger;
+            const after = new Date().getTime();
+            if (after - before > 100) {
+                // Potential DevTools open
+            }
+        }, 2000);
+    </script>
+
+
+    <!-- Cifrado AES-256 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,"script",
+"https://connect.facebook.net/en_US/fbevents.js");
+fbq("init", "1234567890"); // REPLACE WITH REAL PIXEL ID
+fbq("track", "PageView");
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+
+</head>
+<body>
+    <nav class="navbar glass" style="padding: 1rem 5%;">
+        <a href="index.html" class="brand" style="text-decoration: none;"><img loading="lazy" src="assets/images/logo.webp" alt="Unifreire" style="height: 40px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));"></a>
+        <button class="hamburger" id="hamburger-menu" aria-label="Abrir menú">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-links" id="nav-links" style="display: flex; align-items: center; gap: 2rem; /* Aumento de separación */">
+            <a href="index.html" style="text-decoration:none; color:white; font-weight:600; font-size: 1rem; letter-spacing: 0.5px; transition: color 0.3s;">Inicio</a>
+            <a href="index.html#carreras" style="text-decoration:none; color:white; font-weight:600; font-size: 1rem; letter-spacing: 0.5px; transition: color 0.3s;">Carreras</a>
+            <a href="index.html#experiencia-jaguar" style="text-decoration:none; color:white; font-weight:600; font-size: 1rem; letter-spacing: 0.5px; transition: color 0.3s;">Experiencia Jaguar</a>
+            <a href="vocational.html" style="text-decoration:none; color:white; font-weight:600; font-size: 1rem; letter-spacing: 0.5px; transition: color 0.3s;">Test Vocacional</a>
+            
+            <div class="dropdown">
+                <a href="#" style="text-decoration:none; color:white; font-weight:600; font-size: 1rem; letter-spacing: 0.5px; cursor: default; transition: color 0.3s;">Reglamento ▾</a>
+                <div class="dropdown-content">
+                    <a href="https://drive.google.com/file/d/1VNSLey8jWulTmiWSUkn7zfXuW7T5NW6O/view?usp=drive_link" target="_blank">Reglamento General Estatal</a>
+                    <a href="https://drive.google.com/file/d/1eFYyZtbKUikyZy8CxEU9_IacTBSSV-kW/view?usp=drive_link" target="_blank">Reglamento General Federal</a>
+                </div>
+            </div>
+
+            <a href="https://unifreire.edu.mx/SEUnifreire/" target="_blank" class="btn-fosfo">SEUNIFREIRE</a>
+            <a href="https://wa.me/message/VP27JTT7ZB55G1" target="_blank" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: #25D366; font-weight: 600; padding: 0.5rem 1rem;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg> WhatsApp
+            </a>
+            
+        </div>
+    </nav>
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 6rem auto 4rem auto;
+            padding: 3rem 5%;
+            position: relative;
+            overflow: hidden;
+            min-height: 500px;
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .test-header h1 {
+            color: var(--unifreire-yellow);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .question-slide {
+            position: absolute;
+            top: 0; left: 0; width: 100%;
+            opacity: 0;
+            transform: translateX(50px);
+            transition: all 0.5s ease;
+            pointer-events: none;
+            visibility: hidden;
+        }
+        .question-slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: auto;
+            visibility: visible;
+            position: relative;
+        }
+        .question-slide.exit {
+            transform: translateX(-50px);
+            opacity: 0;
+            position: absolute;
+        }
+
+        .question-slide h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            color: var(--unifreire-green-light);
+            text-align: center;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .option-label {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.2rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+        }
+
+        .option-label:hover {
+            background: rgba(255, 184, 28, 0.15);
+            border-color: var(--unifreire-yellow);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .option-label.selected {
+            background: rgba(255, 184, 28, 0.25);
+            border-color: var(--unifreire-yellow);
+            box-shadow: 0 0 15px rgba(255, 184, 28, 0.4);
+        }
+
+        .option-label input {
+            display: none; /* Hide radio */
+        }
+
+        .result-box {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            border: 1px solid var(--unifreire-yellow);
+            border-radius: 12px;
+            background: rgba(0, 77, 54, 0.4);
+            animation: fadeInUp 0.8s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        .result-box h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-box .career-match {
+            font-size: 2.2rem;
+            color: #FFE600;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 0 15px rgba(255, 230, 0, 0.5);
+            text-transform: uppercase;
+        }
+        
+        #progress-bar-container {
+            width: 100%; height: 8px; 
+            background: rgba(255,255,255,0.1); 
+            border-radius: 10px; 
+            margin-bottom: 2.5rem; 
+            overflow: hidden; 
+            display: none;
+        }
+        
+        #progress-bar {
+            width: 0%; height: 100%; 
+            background: #FFE600; 
+            box-shadow: 0 0 10px #FFE600; 
+            transition: width 0.5s ease;
+        }
+
+        .btn-fosfo {
+            position: relative;
+            text-decoration: none;
+            color: #FFB81C;
+            font-weight: 700;
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 10px rgba(255, 184, 28, 0.5), inset 0 0 5px rgba(255, 184, 28, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 184, 28, 0.8);
+            cursor: pointer;
+            display: inline-block;
+        }
+        .btn-fosfo:hover {
+            color: #fff;
+            background: rgba(255, 184, 28, 0.2);
+            box-shadow: 0 0 20px rgba(255, 184, 28, 0.8), inset 0 0 10px rgba(255, 184, 28, 0.5);
+            transform: translateY(-2px) scale(1.02);
+        }
+    </style>
+
+    <div class="test-container glass" id="quiz-container">
+        
+        <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+
+        <div id="intro-screen" class="test-header">
+            <h1>Descubre tu Verdadera Vocación</h1>
+            <p style="font-size:1.1rem; color:var(--text-secondary); max-width:600px; margin: 0 auto 2rem auto;">Responde estas 8 preguntas rápidas. Analizaremos tu perfil y te sugeriremos la carrera exacta donde tu talento brillará en la industria.</p>
+            <button class="btn-fosfo" onclick="startTest()">INICIAR TEST</button>
+        </div>
+
+        <form id="vocational-form">
+            <div id="dynamic-questions" style="position:relative;"></div>
+        </form>
+
+        <div id="result-box" class="result-box">
+            <h2 style="color:white; font-size:1.5rem;">¡Felicidades! Tu Perfil Jaguar ideal es:</h2>
+            <div id="match-career" class="career-match">Cargando perfil...</div>
+            <p style="margin-bottom: 2rem; font-size:1.1rem; color:var(--text-secondary); max-width:600px; margin-left:auto; margin-right:auto;">Tienes el talento, la visión y la mentalidad exacta que las mejores empresas están buscando urgentemente. Inicia tu proceso de admisión hoy mismo y asegura tu futuro profesional.</p>
+            
+            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:2rem;">
+                <button class="btn-accent" style="padding: 1rem 2rem; border-radius:30px;" onclick="goToCareer()">VER PLAN DE ESTUDIOS</button>
+                <a href="https://unifreire.edu.mx/SEUnifreire/" target="_blank" id="btn-inscribirme" class="btn-fosfo" style="display:flex; align-items:center;">INSCRIBIRME AHORA</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="data.js"></script>
+    <script>
+        let recommendedId = '';
+        let currentQuestionIndex = 0;
+        let selectedQuestions = [];
+        let userAnswers = {};
+
+        const QUESTION_BANK = [
+    { text: "Al enfrentarte a un problema que carece de una solución clara, ¿cuál es tu aproximación inicial?", a: "Abstraer los componentes del problema para formular un modelo predictivo", b: "Evaluar el impacto estructural y los recursos necesarios para viabilizar una respuesta", c: "Consultar precedentes normativos y establecer un marco de actuación justo", d: "Analizar las motivaciones ocultas de los actores involucrados", e: "Bocetar mapas mentales visuales para encontrar armonía en el caos" },
+    { text: "En un escenario de alta incertidumbre y estrés, ¿dónde encuentras anclaje cognitivo?", a: "En la precisión inmutable de las leyes físicas y algoritmos", b: "En la capacidad de reestructurar la cadena de mando y el capital", c: "En el imperio de la ley, la ética colectiva y el deber ser", d: "En el estudio profundo de la conducta atípica y sus detonantes", e: "En la proporción, la simetría y el rediseño del entorno físico" },
+    { text: "Si tuvieras que descifrar un lenguaje extraterrestre, ¿por dónde empezarías?", a: "Buscando patrones matemáticos, binarios o señales algorítmicas", b: "Estableciendo un sistema de intercambio de valor o negociación", c: "Analizando sus reglas de convivencia y jerarquías de autoridad", d: "Observando sus reacciones primarias ante el miedo o la empatía", e: "Interpretando sus representaciones gráficas y su arquitectura espacial" },
+    { text: "Frente a un avance tecnológico disruptivo (ej. IA avanzada), ¿cuál es tu principal inquietud?", a: "Cómo optimizar su código para interconectar sistemas autónomos", b: "De qué forma alterará las dinámicas del mercado global", c: "Los vacíos legales que podrían vulnerar los derechos humanos", d: "El impacto psicológico y el potencial incremento de sociopatías", e: "Cómo rediseñará los espacios en los que habitamos e interactuamos" },
+    { text: "Selecciona el concepto que te resulta más fascinante explorar:", a: "Termodinámica y redes neuronales artificiales", b: "Macroeconomía y teoría de juegos aplicados a negocios", c: "Filosofía moral y dogmática jurídica", d: "Perfilación criminal y neurobiología del trauma", e: "Urbanismo táctico y diseño bioclimático" },
+    { text: "¿Qué habilidad consideras más crítica para el futuro de la humanidad?", a: "La capacidad de automatizar y perfeccionar sistemas mecánicos", b: "La administración eficiente de recursos en un mundo de escasez", c: "La construcción de marcos legales universales inquebrantables", d: "La decodificación clínica de las motivaciones humanas destructivas", e: "La edificación de entornos sostenibles que eleven el espíritu humano" },
+    { text: "Cuando observas una metrópolis desde el aire, ¿qué es lo primero que procesa tu mente?", a: "El flujo de la red eléctrica, telecomunicaciones y transporte", b: "Los centros financieros, el PIB generado y el comercio", c: "La desigualdad social y las leyes de zonificación que la permiten", d: "La tensión invisible y las zonas de alta incidencia delictiva", e: "La morfología de los edificios y la integración con la naturaleza" },
+    { text: "Si escribieras un libro revolucionario, ¿sobre qué trataría?", a: "Un nuevo paradigma en la integración humano-máquina", b: "Principios disruptivos para la gestión del talento y el capital", c: "Una reescritura de los derechos fundamentales en la era digital", d: "La anatomía de las mentes sociópatas en la historia", e: "El impacto de la geometría espacial en la emoción humana" },
+    { text: "¿Cuál es tu respuesta instintiva ante el fracaso sistemático de un proyecto?", a: "Desarmar el sistema entero para aislar la variable defectuosa", b: "Reestructurar el presupuesto, pivotar la idea y motivar al equipo", c: "Auditar los procesos para encontrar incumplimientos normativos", d: "Entrevistar a los involucrados para detectar sabotajes inconscientes", e: "Desechar el plano original y buscar una nueva perspectiva estética" },
+    { text: "¿Qué enigma histórico despierta más tu curiosidad analítica?", a: "Los mecanismos y matemáticas detrás de la Máquina de Anticitera", b: "Las estrategias comerciales que sostuvieron al Imperio Romano", c: "Los juicios y la creación de los primeros códigos civiles", d: "Los motivos psicológicos no resueltos de figuras históricas polémicas", e: "Las técnicas de ingeniería y proporción de las pirámides" },
+    { text: "¿Cómo sueles persuadir a otros de que tienes la razón?", a: "Mostrando datos cuantitativos, métricas y pruebas empíricas", b: "Evidenciando el beneficio mutuo, el ROI o el valor estratégico", c: "Argumentando con lógica deductiva, ética y precedentes", d: "Apelando a sus sesgos cognitivos tras leer su lenguaje corporal", e: "Presentando un prototipo visual o un esquema que hable por sí solo" },
+    { text: "De los siguientes perfiles documentales, ¿cuál verías de principio a fin?", a: "La ingeniería detrás de los robots exploradores de Marte", b: "El ascenso y caída de gigantes corporativos de Wall Street", c: "Grandes batallas legales que cambiaron la constitución", d: "El análisis forense de casos sin resolver y mentes criminales", e: "Las megaestructuras y la mente de grandes diseñadores" },
+    { text: "¿Qué te causa mayor satisfacción intelectual?", a: "Lograr que múltiples sistemas complejos funcionen en sincronía", b: "Proyectar una visión, ejecutarla y ver cómo se multiplica el valor", c: "Defender una postura justa frente a una mayoría equivocada", d: "Encontrar la pieza clave que revela por qué alguien mintió", e: "Transformar un espacio vacío en algo funcional y asombroso" },
+    { text: "Si te enfrentas a un rompecabezas abstracto, ¿cómo lo abordas?", a: "Calculo permutaciones y algoritmos para resolverlo rápido", b: "Delego partes a quienes considero más hábiles en ciertos patrones", c: "Establezco reglas inamovibles sobre cómo mover las piezas", d: "Trato de entender la mente del creador del rompecabezas", e: "Agrupo las piezas por simetría, color y forma estructural" },
+    { text: "¿Cuál de estos roles asumirías en una expedición a terreno desconocido?", a: "Operador de tecnología, drones y telemetría", b: "Director logístico y gestor de raciones", c: "Mediador de conflictos y encargado de las reglas éticas", d: "Analista de riesgos conductuales ante el aislamiento", e: "Cartógrafo y creador de refugios eficientes" },
+    { text: "En tu opinión, ¿qué es la 'Verdad'?", a: "Un valor absoluto que puede probarse matemáticamente", b: "Un consenso pragmático que permite la operatividad", c: "La correcta interpretación de los hechos bajo un marco ético", d: "Una construcción subjetiva que oculta los verdaderos motivos", e: "La armonía entre la forma y la función" },
+    { text: "¿Qué tipo de error toleras menos en tu entorno?", a: "La inexactitud técnica o la falla de un sistema probado", b: "La ineficiencia o el desperdicio de tiempo y capital", c: "La injusticia flagrante y la corrupción de las normas", d: "La hipocresía y la falta de empatía en situaciones críticas", e: "El desorden estético y la falta de planificación espacial" },
+    { text: "Cuando juegas juegos de estrategia complejos (ej. ajedrez o de mesa), tu estilo es:", a: "Calcular múltiples movimientos adelantados con precisión lógica", b: "Manejar los recursos del juego para asfixiar las opciones del rival", c: "Apegarte estrictamente a las reglas y penalizar quien se desvíe", d: "Hacer jugadas psicológicas para poner nervioso al oponente", e: "Construir una defensa sólida, simétrica e impenetrable" },
+    { text: "¿Cómo conceptualizas el 'Poder'?", a: "Como la capacidad de dominar la energía y la información", b: "Como la influencia económica y organizacional sobre las masas", c: "Como la autoridad legítima derivada de las leyes", d: "Como la habilidad de manipular y predecir el comportamiento", e: "Como la capacidad de alterar el entorno para impactar la psique" },
+    { text: "De las siguientes herramientas de software, ¿cuál te resulta más intrigante?", a: "Lenguajes de programación e IDEs complejos", b: "Sistemas ERP, CRMs y analítica de negocios", c: "Bases de datos de jurisprudencia y contratos inteligentes", d: "Software forense, perfilamiento biométrico o análisis de voz", e: "Programas de renderizado 3D, CAD o modelado paramétrico" },
+    { text: "¿Qué elemento es fundamental para una civilización avanzada?", a: "La automatización y la inteligencia artificial general", b: "Un sistema económico libre y mercados eficientes", c: "Un sistema de justicia imparcial, ciego y equitativo", d: "Una profunda comprensión de la salud mental colectiva", e: "Infraestructuras que soporten la vida de manera sostenible" },
+    { text: "¿Qué harías si descubres un patrón inusual en unos datos?", a: "Escribo un script para aislar la anomalía y comprobar su origen", b: "Analizo si ese patrón representa una oportunidad de mercado", c: "Reviso si el patrón evidencia una vulneración legal", d: "Investigo quién alteró los datos y con qué motivación oscura", e: "Visualizo el patrón gráficamente para entender su geometría" },
+    { text: "Frente a un dilema moral complejo, tu decisión se basa en:", a: "La solución más lógica que optimice el resultado global", b: "La opción que garantice la supervivencia de la organización", c: "El estricto apego a la norma, cueste lo que cueste", d: "Entender el trauma y el contexto del individuo afectado", e: "Buscar una tercera vía lateral, creativa y poco convencional" },
+    { text: "Si tuvieras que enseñar una materia universitaria, ¿cuál elegirías?", a: "Sistemas Dinámicos y Robótica Avanzada", b: "Desarrollo Organizacional y Finanzas Corporativas", c: "Derecho Constitucional y Retórica Política", d: "Psicología Forense y Perfilación Criminológica", e: "Diseño Estructural e Historia de la Arquitectura" },
+    { text: "Tu concepto del 'Orden' se define como:", a: "Algoritmos ejecutándose sin redundancias ni errores", b: "Procesos estandarizados maximizando el rendimiento", c: "El cumplimiento universal de los acuerdos pactados", d: "La ausencia de impulsos destructivos incontrolables", e: "El balance perfecto entre volúmenes, luces y texturas" },
+    { text: "Imagina que puedes viajar en el tiempo, ¿qué evento te interesaría atestiguar?", a: "El momento en que se inventó el primer ordenador cuántico", b: "La creación de la primera bolsa de valores moderna", c: "La firma de los primeros derechos fundamentales del ser humano", d: "El interrogatorio original a un genio criminal histórico", e: "La construcción y diseño de los jardines colgantes de Babilonia" },
+    { text: "¿Qué tipo de lenguaje prefieres utilizar en tu día a día?", a: "Técnico, preciso, matemático e inequívoco", b: "Ejecutivo, directo, enfocado en resultados", c: "Formal, persuasivo, fundamentado en reglas", d: "Observacional, cauteloso, leyendo entre líneas", e: "Descriptivo, visual, utilizando analogías espaciales" },
+    { text: "En un debate sobre el destino del ser humano, tu postura es:", a: "La tecnología nos llevará a la singularidad", b: "La economía globalizada unificará nuestras necesidades", c: "Solo un contrato social sólido evitará el colapso", d: "Nuestra naturaleza tribal y psicológica nunca cambiará", e: "Adaptaremos nuestro hábitat físico para sobrevivir" },
+    { text: "Si fueras un detective, tu mayor fortaleza sería:", a: "Hackear sistemas para recolectar evidencia digital", b: "Rastrear las transacciones financieras oscuras", c: "Encontrar la fisura legal en las coartadas", d: "Leer las microexpresiones durante un interrogatorio", e: "Reconstruir mentalmente la escena en 3D" },
+    { text: "El concepto de 'belleza' para ti reside en:", a: "La elegancia de una ecuación matemática perfecta", b: "El crecimiento compuesto de un sistema escalable", c: "La elocuencia de un alegato perfectamente estructurado", d: "La complejidad incomprensible de la mente humana", e: "La armonía de los elementos tangibles en un espacio" },
+    { text: "¿Qué noticia mundial captaría inmediatamente tu atención?", a: "Un nuevo avance en nanotecnología automatizada", b: "Una fusión de megacorporaciones alterando el mercado", c: "Una corte internacional fallando sobre un caso sin precedentes", d: "La revelación psicológica detrás de un ataque masivo", e: "La inauguración de una ciudad totalmente inteligente y flotante" },
+    { text: "¿Cómo consideras la intuición en la toma de decisiones?", a: "Un sesgo cognitivo que debe ser corregido con datos", b: "Una herramienta útil, pero subordinada al análisis de riesgo", c: "Peligrosa, ya que las decisiones deben basarse en evidencias y ley", d: "El sexto sentido crítico para detectar mentiras y peligros", e: "La fuente principal de la genialidad creativa y el diseño" },
+    { text: "¿A qué dedicas más tiempo analizando inconscientemente?", a: "A cómo están construidos y programados los dispositivos que uso", b: "A los modelos de negocio de los lugares que visito", c: "A las injusticias diarias que la sociedad normaliza", d: "A las interacciones sociales y por qué la gente reacciona así", e: "A la iluminación, texturas y ergonomía de las habitaciones" },
+    { text: "Para ti, el 'caos' se combate con:", a: "Optimización matemática y control de variables", b: "Liderazgo firme, delegación y reasignación de presupuestos", c: "El establecimiento de nuevas leyes y su aplicación rigurosa", d: "Intervención psicológica y análisis de contención", e: "Rediseño ambiental para forzar un nuevo comportamiento" },
+    { text: "¿Cuál sería tu epitafio ideal?", a: "Descodificó los secretos de la materia y el código", b: "Lideró con visión, transformando el valor en legado", c: "Defendió la verdad y la justicia inquebrantablemente", d: "Comprendió el abismo de la mente humana", e: "Diseñó el mundo para que fuera un lugar mejor" }
+        ];
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const shuffledBank = shuffle([...QUESTION_BANK]);
+            selectedQuestions = shuffledBank.slice(0, 8);
+        });
+
+        function startTest() {
+            document.getElementById('intro-screen').style.display = 'none';
+            document.getElementById('progress-bar-container').style.display = 'block';
+            renderQuestion(0);
+        }
+
+        function renderQuestion(index) {
+            if (index >= 8) {
+                calculateResult();
+                return;
+            }
+            
+            const formContainer = document.getElementById('dynamic-questions');
+            const q = selectedQuestions[index];
+            const opts = [
+                {val: 'A', text: q.a}, {val: 'B', text: q.b},
+                {val: 'C', text: q.c}, {val: 'D', text: q.d},
+                {val: 'E', text: q.e}
+            ];
+            const shuffledOpts = shuffle(opts);
+
+            let optsHtml = '';
+            shuffledOpts.forEach(o => {
+                optsHtml += `<label class="option-label" onclick="selectOption('${o.val}', this)">
+                                <input type="radio" name="q${index}" value="${o.val}"> 
+                                <span>${o.text}</span>
+                             </label>`;
+            });
+
+            // Slide out old questions
+            const allSlides = document.querySelectorAll('.question-slide');
+            allSlides.forEach(slide => {
+                slide.classList.remove('active');
+                slide.classList.add('exit');
+                setTimeout(() => slide.remove(), 500);
+            });
+
+            // Slide in new question
+            const newSlide = document.createElement('div');
+            newSlide.className = 'question-slide';
+            newSlide.innerHTML = `
+                <div class="question" style="margin-bottom:0;">
+                    <h3 style="font-size:1.6rem; color:white; margin-bottom: 2rem;">
+                       <span style="color:var(--unifreire-yellow); margin-right:0.5rem;">${index + 1}/8.</span>
+                       ${q.text}
+                    </h3>
+                    <div class="options">
+                        ${optsHtml}
+                    </div>
+                </div>`;
+            
+            formContainer.appendChild(newSlide);
+            
+            // Trigger animation
+            setTimeout(() => {
+                newSlide.classList.add('active');
+            }, 50);
+
+            // Update Progress
+            const progress = ((index) / 8) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        }
+
+        function selectOption(val, element) {
+            const slide = element.closest('.question-slide');
+            if (slide.dataset.answered === 'true') return;
+            slide.dataset.answered = 'true';
+
+            // Unselect others
+            const allLabels = element.parentElement.querySelectorAll('.option-label');
+            allLabels.forEach(lbl => lbl.classList.remove('selected'));
+            
+            // Select current
+            element.classList.add('selected');
+            const radio = element.querySelector('input');
+            radio.checked = true;
+            
+            userAnswers[currentQuestionIndex] = val;
+
+            // Auto-advance after delay
+            setTimeout(() => {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+            }, 400);
+        }
+
+        function calculateResult() {
+            document.getElementById('progress-bar').style.width = '100%';
+            setTimeout(() => {
+                document.getElementById('progress-bar-container').style.display = 'none';
+                document.getElementById('dynamic-questions').style.display = 'none';
+            }, 500);
+
+            let scores = { A:0, B:0, C:0, D:0, E:0 };
+            for(let i=0; i<8; i++) {
+                scores[userAnswers[i]]++;
+            }
+
+            let maxScore = 0;
+            let winner = '';
+            for (let s in scores) {
+                if (scores[s] > maxScore) {
+                    maxScore = scores[s];
+                    winner = s;
+                }
+            }
+
+            const maps = {
+                'A': {id: 'ing-mecatronica', title: 'Ingeniería en Mecatrónica'},
+                'B': {id: 'lic-administracion', title: 'Licenciatura en Administración'},
+                'C': {id: 'lic-derecho', title: 'Licenciatura en Derecho'},
+                'D': {id: 'lic-criminologia', title: 'Licenciatura en Criminología'},
+                'E': {id: 'lic-arquitectura', title: 'Licenciatura en Arquitectura'}
+            };
+
+            const result = maps[winner] || maps['A'];
+            recommendedId = result.id;
+            
+            const rb = document.getElementById('result-box');
+            rb.style.display = 'block';
+            document.getElementById('match-career').innerText = result.title;
+            
+            const btnInscribirme = document.getElementById('btn-inscribirme');
+            if (btnInscribirme) {
+                const message = `Hola, hice el test vocacional y mi perfil es para la ${result.title}. Me gustaría recibir información de inscripción.`;
+                btnInscribirme.href = `https://wa.me/528444550030?text=${encodeURIComponent(message)}`;
+            }
+        }
+
+        function goToCareer() {
+            localStorage.setItem('carreraSeleccionada', recommendedId);
+            window.location.href = 'career.html';
+        }
+    </script>
+<footer style="background: rgba(0,0,0,0.9); border-top: 1px solid rgba(255,184,28,0.3); padding: 4rem 5%; color: white; margin-top: auto;">
+        <h3 style="color: var(--unifreire-yellow); margin-bottom: 2rem; font-size: 1.5rem; text-align: center;">Nuestros Planteles</h3>
+        <div id="planteles-container" style="display: flex; flex-wrap: nowrap; gap: 1rem; justify-content: center; width: 100%; overflow-x: auto;">
+        </div>
+        <p style="text-align: center; color: #666; margin-top: 3rem; font-size: 0.8rem;">&copy; 2026 UNIFREIRE. Todos los derechos reservados.</p>
+    </footer>
+
+        <!-- Security & Dynamic Social Script -->
+    <script>
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.code === "F12" || e.keyCode === 123) return false;
+            if(e.ctrlKey && e.shiftKey && (e.code === "KeyI" || e.code === "KeyJ" || e.code === "KeyC")) return false;
+            if(e.ctrlKey && e.code === "KeyU") return false;
+        };
+        const fab = document.getElementById('social-fab');
+        const menu = document.getElementById('social-menu');
+        if (fab && menu) {
+            fab.addEventListener('click', () => {
+                menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'flex' : 'none';
+            });
+        }
+    </script>
+
+    <script>
+        // Global Secret Admin Access
+        (function() {
+            let secretCode = "";
+            document.addEventListener("keydown", (e) => {
+                if (e.key) {
+                    secretCode += e.key.toLowerCase();
+                    if(secretCode.includes("mkt")) {
+                        window.location.href = "u-portal-3091.html";
+                    }
+                    if(secretCode.length > 20) secretCode = secretCode.slice(-20);
+                }
+            });
+        })();
+    </script>
+
+</body>
+</html>
