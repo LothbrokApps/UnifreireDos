@@ -131,32 +131,30 @@ function renderCareers(filter) {
         card.style.backgroundImage = `url('${finalImgUrl}')`;
         card.setAttribute('onclick', `viewCareer('${c.id}')`);
 
+        const rvoeText = c.rvoe ? c.rvoe : 'Validez Oficial SEP';
+
         card.innerHTML = `
             <div class="career-card-overlay"></div>
             
-            <!-- Icono superior derecho (favorito / guardar) -->
-            <div class="career-card-badge-top" title="Guardar carrera">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                </svg>
-            </div>
-
-            <!-- Contenido inferior de la tarjeta -->
+            <!-- Contenido de la tarjeta -->
             <div class="career-card-content">
-                <h3 style="font-size: 1.35rem; font-weight: 700; color: #ffffff; margin: 0 0 0.35rem 0; text-shadow: 0 2px 6px rgba(0,0,0,0.7); line-height: 1.25;">${c.name}</h3>
-                <p style="font-size: 0.9rem; color: rgba(255,255,255,0.85); margin: 0 0 0.6rem 0; font-weight: 500;">${c.type} • ${c.duration}</p>
+                <h3 style="font-size: 1.18rem; font-weight: 700; color: #ffffff; margin: 0 0 0.3rem 0; text-shadow: 0 2px 6px rgba(0,0,0,0.85); line-height: 1.25;">${c.name}</h3>
+                <p style="font-size: 0.84rem; color: rgba(255,255,255,0.88); margin: 0 0 0.5rem 0; font-weight: 500;">${c.type} • ${c.duration}</p>
                 
-                <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 1.1rem;">
-                    <div style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; border-radius: 20px; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.2); font-size: 0.75rem; color: #ffb81c; font-weight: 600;">
-                        <span>★ 5.0</span>
-                        <span style="color: rgba(255,255,255,0.7); border-left: 1px solid rgba(255,255,255,0.3); padding-left: 0.35rem;">${c.rvoe ? 'RVOE Oficial' : 'Validez Oficial'}</span>
+                <!-- Badge de RVOE Oficial (sin ★ 5.0) -->
+                <div style="display: flex; align-items: center; margin-bottom: 0.85rem;">
+                    <div style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; border-radius: 20px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 184, 28, 0.45); font-size: 0.72rem; color: #ffb81c; font-weight: 600; max-width: 100%; box-sizing: border-box;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffb81c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${rvoeText}</span>
                     </div>
                 </div>
 
                 <div class="career-card-btn">
-                    <span style="color: white; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.4px;">Conoce más</span>
+                    <span style="color: white; font-weight: 600; font-size: 0.88rem; letter-spacing: 0.4px;">Conoce más</span>
                     <div class="career-card-btn-arrow">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#004d36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#004d36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </div>
