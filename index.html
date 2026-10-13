@@ -138,30 +138,63 @@ src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
             <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6;">Conoce más sobre la vida estudiantil, eventos institucionales y la garra que nos distingue. Ser Jaguar es llevar el éxito en el ADN.</p>
         </div>
         
-        <div id="carousel-track-container" style="position: relative; z-index: 1; width: 100%; overflow: hidden; padding: 2rem 0;">
+        <div id="carousel-track-container" style="position: relative; z-index: 1; width: 100%; overflow: hidden; padding: 1.5rem 0 3rem 0;">
             <style>
                 .scroll-track {
                    display: flex;
                    width: max-content;
-                   gap: 1rem;
+                   gap: 1.8rem;
+                   align-items: center;
                    cursor: grab;
+                   padding: 2.5rem 1rem;
+                   user-select: none;
                 }
                 .scroll-track:active {
                    cursor: grabbing;
                 }
                 .scroll-item {
-                   width: 350px; 
-                   height: 250px;
-                   border-radius: 12px;
+                   width: 250px; 
+                   height: 335px;
+                   border-radius: 4px;
                    background-size: cover;
                    background-position: center;
-                   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-                   transition: transform 0.3s ease;
+                   background-repeat: no-repeat;
+                   border: 8px solid #ffffff; /* Marco blanco estilo fotografía */
+                   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.4);
+                   transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.35s ease;
                    cursor: pointer;
                    flex-shrink: 0;
+                   position: relative;
+                   box-sizing: border-box;
+                }
+                /* Acomodo dinámico en zigzag/inclinación idéntico a la referencia */
+                .scroll-item:nth-child(4n + 1) {
+                   transform: rotate(-4.5deg) translateY(-8px);
+                }
+                .scroll-item:nth-child(4n + 2) {
+                   transform: rotate(3.5deg) translateY(12px);
+                }
+                .scroll-item:nth-child(4n + 3) {
+                   transform: rotate(-3deg) translateY(-6px);
+                }
+                .scroll-item:nth-child(4n + 4) {
+                   transform: rotate(4.5deg) translateY(10px);
                 }
                 .scroll-item:hover {
-                   transform: scale(1.05);
+                   transform: scale(1.08) rotate(0deg) translateY(0) !important;
+                   z-index: 15;
+                   box-shadow: 0 24px 45px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 184, 28, 0.35);
+                }
+                @media (max-width: 768px) {
+                   .scroll-track {
+                      gap: 1.2rem;
+                      padding: 2rem 0.5rem;
+                   }
+                   .scroll-item {
+                      width: 195px;
+                      height: 260px;
+                      border: 6px solid #ffffff;
+                   }
                 }
             </style>
             
