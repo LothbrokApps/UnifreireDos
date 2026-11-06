@@ -55,19 +55,20 @@
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
 n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,"script",
-"https://connect.facebook.net/en_US/fbevents.js");
-fbq("init", "1234567890"); // REPLACE WITH REAL PIXEL ID
-fbq("track", "PageView");
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1531720812332605');
+fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
+src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 
+    <meta name="referrer" content="no-referrer-when-downgrade">
 </head>
 <body>
     <nav class="navbar glass" style="padding: 1rem 4rem; justify-content: space-between;">
@@ -98,7 +99,10 @@ src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
     </nav>
 
     <header class="hero">
-        <img loading="lazy" id="main-hero-img" src="https://drive.google.com/thumbnail?id=1hxoM7X4cs2A5U_P_2J7C9aScIA4DZpRX&sz=w1920-h1080" alt="Hero Background" class="hero-video" onerror="this.src='assets/images/hero_bg.webp'" style="object-fit: cover; object-position: center;">
+        <video id="main-hero-video" class="hero-video" autoplay muted loop playsinline preload="auto" poster="assets/images/hero_bg.webp" style="object-fit: cover; object-position: center; z-index: -2;">
+            <source src="https://res.cloudinary.com/a5agws1y/video/upload/v1793922327/SPOT_EDIFICIOS.mp4" type="video/mp4">
+        </video>
+        <img loading="lazy" id="main-hero-img" src="assets/images/hero_bg.webp" alt="Hero Background" class="hero-video" style="object-fit: cover; object-position: center; display: none; z-index: -2;" referrerpolicy="no-referrer">
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <h1>Tu Historia empieza aquí</h1>
@@ -223,12 +227,18 @@ src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
                         ];
                     }
                     
-                    // Duplicate for infinite scroll feel
-                    const combined = [...pics, ...pics, ...pics, ...pics, ...pics, ...pics]; 
+                    // Duplicate for seamless infinite scroll
+                    const combined = [...pics, ...pics, ...pics, ...pics]; 
                     
                     let h = '';
                     combined.forEach(p => {
-                        h += `<div class="scroll-item" style="background-image: url('${p}')" onclick="openCarouselModal('${p}')"></div>`;
+                        const directUrl = typeof getDirectUrl === 'function' ? getDirectUrl(p) : p;
+                        // Usar contenedor con imagen que respeta referrerpolicy="no-referrer" para Facebook CDN y Drive
+                        h += `
+                            <div class="scroll-item" onclick="openCarouselModal('${directUrl.replace(/'/g, "\'")}')">
+                                <img src="${directUrl}" alt="Experiencia Jaguar" referrerpolicy="no-referrer" loading="lazy" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='assets/images/hero_bg.webp';">
+                            </div>
+                        `;
                     });
                     
                     track.innerHTML = h;
@@ -324,7 +334,7 @@ src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
     <!-- Footer -->
     <footer style="background: rgba(0,0,0,0.9); border-top: 1px solid rgba(255,184,28,0.3); padding: 4rem 5%; color: white; margin-top: auto;">
         <h3 style="color: var(--unifreire-yellow); margin-bottom: 2rem; font-size: 1.5rem; text-align: center;">Nuestros Planteles</h3>
-        <div id="planteles-container" style="display: flex; flex-wrap: nowrap; gap: 1rem; justify-content: center; width: 100%; overflow-x: auto;">
+        <div id="planteles-container">
         </div>
         <p style="text-align: center; color: #666; margin-top: 3rem; font-size: 0.8rem;">&copy; 2026 UNIFREIRE. Todos los derechos reservados.</p>
     </footer>

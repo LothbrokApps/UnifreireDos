@@ -582,14 +582,7 @@ body {
         font-size: 1rem !important;
     }
 
-    #planteles-container {
-        justify-content: flex-start !important;
-        padding-bottom: 1rem;
-    }
     
-    #planteles-container > div {
-        flex: 0 0 85% !important;
-    }
 }
 
 @media (min-width: 769px) {
@@ -913,5 +906,149 @@ body {
     #careers-grid {
         grid-template-columns: 1fr !important;
         gap: 1.2rem !important;
+    }
+}
+
+
+/* ========================================================
+   APARTADO NUESTROS PLANTELES (DIMENSIONADO COMPACTO Y ELEGANTE)
+   ======================================================== */
+#planteles-container {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 1.1rem !important;
+    width: 100% !important;
+    max-width: 1380px !important;
+    margin: 0 auto !important;
+    padding: 0.5rem 0 !important;
+    box-sizing: border-box !important;
+}
+
+.plantel-card-item {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 1.15rem 1rem 1rem 1rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    min-height: 195px;
+}
+
+.plantel-card-item:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 184, 28, 0.45);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+
+.plantel-title {
+    color: var(--unifreire-yellow);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 184, 28, 0.25);
+    padding-bottom: 0.4rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.plantel-address {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #dedede;
+    margin: 0 0 0.5rem 0;
+    min-height: 42px;
+}
+
+.plantel-phone {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 0.8rem 0;
+}
+
+.plantel-btn {
+    font-size: 0.78rem !important;
+    padding: 0.45rem 0.8rem !important;
+    border-radius: 20px !important;
+    text-align: center !important;
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+}
+
+/* ========================================================
+   TARJETAS DE PLANTELES EN DETALLE DE CARRERA (COMPACTAS)
+   ======================================================== */
+.planteles-carrera-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+}
+
+.planteles-subgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+}
+
+.plantel-oferta-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 1.25rem 1.25rem 1.15rem 1.25rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.plantel-oferta-title {
+    color: var(--unifreire-yellow);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 0.8rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 184, 28, 0.25);
+    padding-bottom: 0.4rem;
+}
+
+@media (max-width: 1200px) {
+    #planteles-container {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    #planteles-container {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.8rem !important;
+    }
+    .plantel-title {
+        font-size: 0.95rem;
+    }
+    .plantel-address {
+        font-size: 0.76rem;
+    }
+    .plantel-phone {
+        font-size: 0.78rem;
+    }
+    .planteles-subgrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    #planteles-container {
+        grid-template-columns: 1fr !important;
     }
 }

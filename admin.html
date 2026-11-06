@@ -193,16 +193,16 @@
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
 n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,"script",
-"https://connect.facebook.net/en_US/fbevents.js");
-fbq("init", "1234567890"); // REPLACE WITH REAL PIXEL ID
-fbq("track", "PageView");
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1531720812332605');
+fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
+src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
@@ -323,6 +323,10 @@ src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
                     <h3 style="color: white; margin-bottom: 1rem;">2. Pega el enlace directo aquí</h3>
                     <input type="text" id="carousel-url-input" placeholder="Ej. https://drive.google.com/uc?export=view&id=1XyZabc..." style="width: 100%; padding: 0.8rem; border-radius: 4px; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white; margin-bottom: 1rem;">
                     <button class="btn-accent" onclick="addCarouselUrl()">Agregar Imagen al Carrusel</button>
+                    <button class="btn-primary" style="background: rgba(231,76,60,0.8); margin-left: 0.5rem;" onclick="cleanBrokenCarouselPics()">Limpiar Enlaces No Disponibles</button>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.6rem; line-height: 1.4;">
+                        Acepta enlaces de <b>Google Drive</b>, <b>Facebook</b> (clic derecho en la foto &gt; "Copiar dirección de la imagen"), <b>Cloudinary</b> y URLs directas (JPG, PNG, WebP).
+                    </p>
                     <p id="carousel-upload-msg" style="color: var(--unifreire-yellow); margin-top: 1rem;"></p>
                 </div>
 
@@ -417,6 +421,10 @@ src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
                         <input type="checkbox" id="ce-flag-mty" style="width:1.2rem; height:1.2rem;">
                         <span>Disponible en Plantel Monterrey</span>
                     </label>
+                    <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; margin-top:0.5rem;">
+                        <input type="checkbox" id="ce-flag-guadalupe" style="width:1.2rem; height:1.2rem;">
+                        <span>Disponible en Plantel Guadalupe, N.L.</span>
+                    </label>
                 </div>
                 
                                 <!-- Saltillo -->
@@ -443,19 +451,32 @@ src="https://www.facebook.com/tr?id=1234567890&ev=PageView&noscript=1"
                 </div>
 
                 <!-- Monterrey -->
-                <div style="background: rgba(0,77,54,0.4); padding: 1rem; border-radius: 8px; border: 1px solid var(--unifreire-yellow);">
+                <div style="background: rgba(0,77,54,0.4); padding: 1rem; border-radius: 8px; border: 1px solid var(--unifreire-yellow); margin-bottom: 1.5rem;">
                     <h3 style="color: var(--unifreire-yellow); margin-top:0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.5rem;">Datos Monterrey</h3>
                     
                     <label>Modalidades y Horarios</label>
                     <div class="rich-editor-container" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.2);">
-                        
                         <div id="ce-mod-mty"  style="width: 100%; min-height: 100px; padding: 0.5rem; color: white; outline: none; word-wrap: break-word;"></div>
                     </div>
                     
                     <label>Costos</label>
                     <div class="rich-editor-container" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.2);">
-                        
                         <div id="ce-cost-mty"  style="width: 100%; min-height: 100px; padding: 0.5rem; color: white; outline: none; word-wrap: break-word;"></div>
+                    </div>
+                </div>
+
+                <!-- Guadalupe, N.L. -->
+                <div style="background: rgba(0,77,54,0.4); padding: 1rem; border-radius: 8px; border: 1px solid var(--unifreire-yellow); margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--unifreire-yellow); margin-top:0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 0.5rem;">Datos Guadalupe, N.L.</h3>
+                    
+                    <label>Modalidades y Horarios</label>
+                    <div class="rich-editor-container" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.2);">
+                        <div id="ce-mod-gpe"  style="width: 100%; min-height: 100px; padding: 0.5rem; color: white; outline: none; word-wrap: break-word;"></div>
+                    </div>
+                    
+                    <label>Costos</label>
+                    <div class="rich-editor-container" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(0,0,0,0.2);">
+                        <div id="ce-cost-gpe"  style="width: 100%; min-height: 100px; padding: 0.5rem; color: white; outline: none; word-wrap: break-word;"></div>
                     </div>
                 </div> <!-- End of grid-column: 1 / -1 -->
             

@@ -1,16 +1,86 @@
 
 function getDirectUrl(url) {
-    if (!url) return url;
+    if (!url) return "";
+    url = url.trim();
     if (url.includes('drive.usercontent.google.com/download')) return url;
-    if (!url.includes('drive.google.com')) return url;
-    const regexD = /\/d\/([a-zA-Z0-9_-]+)/;
-    const regexId = /id=([a-zA-Z0-9_-]+)/;
-    let id = null;
-    if (regexD.test(url)) id = url.match(regexD)[1];
-    else if (regexId.test(url)) id = url.match(regexId)[1];
-    if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1920-h1080`;
+    if (url.includes('drive.google.com')) {
+        const regexD = /\/d\/([a-zA-Z0-9_-]+)/;
+        const regexId = /[?&]id=([a-zA-Z0-9_-]+)/;
+        let id = null;
+        if (regexD.test(url)) id = url.match(regexD)[1];
+        else if (regexId.test(url)) id = url.match(regexId)[1];
+        if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1920-h1080`;
+    }
     return url;
 }
+
+const DEFAULT_HERO_VIDEO = "https://res.cloudinary.com/a5agws1y/video/upload/v1793922327/SPOT_EDIFICIOS.mp4";
+
+function applyHeroMedia(savedHero) {
+    const heroImg = document.getElementById('main-hero-img');
+    const heroVideo = document.getElementById('main-hero-video');
+    if (!heroImg && !heroVideo) return;
+
+    if (!savedHero) {
+        if (heroVideo) {
+            heroVideo.style.display = 'block';
+            heroVideo.play().catch(() => {});
+        }
+        if (heroImg) heroImg.style.display = 'none';
+        return;
+    }
+
+    let url = "";
+    let position = "50% 50%";
+    let scale = 1;
+
+    try {
+        const config = JSON.parse(savedHero);
+        if (config && config.url) {
+            url = config.url;
+            position = config.position || "50% 50%";
+            scale = config.scale || 1;
+        } else {
+            url = savedHero;
+        }
+    } catch(e) {
+        url = savedHero;
+    }
+
+    const directUrl = getDirectUrl(url);
+    const isVideo = directUrl.endsWith('.mp4') || directUrl.endsWith('.webm') || directUrl.includes('/video/upload/');
+
+    if (isVideo) {
+        if (heroVideo) {
+            const source = heroVideo.querySelector('source');
+            if (source && source.src !== directUrl) {
+                source.src = directUrl;
+                heroVideo.load();
+            } else if (!source) {
+                heroVideo.src = directUrl;
+            }
+            heroVideo.style.display = 'block';
+            heroVideo.play().catch(() => {});
+        }
+        if (heroImg) heroImg.style.display = 'none';
+    } else {
+        if (heroImg) {
+            const cv = localStorage.getItem('unifreire_cache_version') || '';
+            const finalUrl = cv ? (directUrl + (directUrl.includes('?') ? '&' : '?') + 'v=' + cv) : directUrl;
+            heroImg.src = finalUrl;
+            heroImg.style.objectPosition = position;
+            heroImg.style.transform = `scale(${scale})`;
+            heroImg.style.display = 'block';
+        }
+        if (heroVideo) {
+            heroVideo.pause();
+            heroVideo.style.display = 'none';
+        }
+    }
+}
+
+
+
 
 
 // =========================================
@@ -68,23 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Dynamic Hero Loading (carga rápida inicial con lo local)
-    const heroImg = document.getElementById('main-hero-img');
-    if (heroImg) {
-        const savedHero = localStorage.getItem('unifreire_hero_banner');
-        if (savedHero) {
-            try {
-                const config = JSON.parse(savedHero);
-                const cv = localStorage.getItem('unifreire_cache_version') || '';
-                heroImg.src = config.url + (config.url.includes('?') ? '&' : '?') + 'v=' + cv;
-                heroImg.style.objectPosition = config.position;
-                heroImg.style.transform = `scale(${config.scale})`;
-            } catch(e) {
-                const cv = localStorage.getItem('unifreire_cache_version') || '';
-                heroImg.src = savedHero + (savedHero.includes('?') ? '&' : '?') + 'v=' + cv;
-            }
-        }
-    }
+    // Dynamic Hero Loading
+    const savedHero = localStorage.getItem('unifreire_hero_banner');
+    applyHeroMedia(savedHero);
 
     const grid = document.getElementById('careers-grid');
     const filterBtns = document.querySelectorAll('.filter-btn');
@@ -175,45 +231,11 @@ async function cargarConfigDesdeNube() {
         const res = await fetch(GLOBAL_BACKEND_URL + "?action=obtenerConfig");
         const config = await res.json();
         
-        function getDirectUrl(url) {
-            if (!url) return url;
-            if (url.includes('drive.usercontent.google.com/download')) return url; // Already direct
-            if (!url.includes('drive.google.com')) return url;
-            
-            const regexD = /\/d\/([a-zA-Z0-9_-]+)/;
-            const regexId = /id=([a-zA-Z0-9_-]+)/;
-            let id = null;
-            if (regexD.test(url)) id = url.match(regexD)[1];
-            else if (regexId.test(url)) id = url.match(regexId)[1];
-            
-            if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1920-h1080`;
-            return url;
-        }
+        
         
         if (config.hero_banner) {
-            let configObj = null;
-            let finalUrl = "";
-            try {
-                configObj = JSON.parse(config.hero_banner);
-                finalUrl = configObj.url;
-            } catch(e) {
-                finalUrl = getDirectUrl(config.hero_banner);
-            }
-            
-            localStorage.setItem('unifreire_hero_banner', typeof config.hero_banner === 'string' && config.hero_banner.includes('{') ? config.hero_banner : finalUrl);
-            
-            const heroImg = document.getElementById('main-hero-img');
-            if (heroImg) {
-                if(configObj) {
-                    const cv = localStorage.getItem('unifreire_cache_version') || '';
-                    const bustedUrl = configObj.url + (configObj.url.includes('?') ? '&' : '?') + 'v=' + cv;
-                    if (heroImg.src !== bustedUrl) heroImg.src = bustedUrl;
-                    heroImg.style.objectPosition = configObj.position;
-                    heroImg.style.transform = `scale(${configObj.scale})`;
-                } else {
-                    if (heroImg.src !== finalUrl) heroImg.src = finalUrl;
-                }
-            }
+            localStorage.setItem('unifreire_hero_banner', typeof config.hero_banner === 'string' ? config.hero_banner : JSON.stringify(config.hero_banner));
+            applyHeroMedia(config.hero_banner);
         }
         
         if (config.carrusel && config.carrusel.length > 0) {

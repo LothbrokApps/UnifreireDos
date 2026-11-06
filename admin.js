@@ -1,3 +1,4 @@
+let quillModGpe = null, quillCostGpe = null;
 
 function formatUnifreireDate(dStr) {
     if (!dStr) return 'N/A';
@@ -82,6 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
             quillCostSaltillo = new Quill('#ce-cost-saltillo', quillOptions);
             quillModMty = new Quill('#ce-mod-mty', quillOptions);
             quillCostMty = new Quill('#ce-cost-mty', quillOptions);
+            if (document.getElementById('ce-mod-gpe')) {
+                quillModGpe = new Quill('#ce-mod-gpe', quillOptions);
+                quillCostGpe = new Quill('#ce-cost-gpe', quillOptions);
+            }
             
             [quillReqSaltillo, quillModSaltillo, quillCostSaltillo].forEach(q => {
                 q.on('text-change', syncLivePreview);
@@ -334,36 +339,54 @@ function exportExcel() {
 function renderCarouselAdmin() {
     const grid = document.getElementById('carousel-preview-grid');
     if(!grid) return;
-    
-    function getDirectUrl(url) {
-        if (!url) return url;
-        if (url.includes('drive.usercontent.google.com/download')) return url;
-        if (!url.includes('drive.google.com')) return url;
-        const regexD = /\/d\/([a-zA-Z0-9_-]+)/;
-        const regexId = /id=([a-zA-Z0-9_-]+)/;
-        let id = null;
-        if (regexD.test(url)) id = url.match(regexD)[1];
-        else if (regexId.test(url)) id = url.match(regexId)[1];
-        if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1920-h1080`;
-        return url;
-    }
 
-    const pics = JSON.parse(localStorage.getItem('unifreire_carousel_images') || '[]');
+    let pics = [];
+    try {
+        pics = JSON.parse(localStorage.getItem('unifreire_carousel_images') || '[]');
+    } catch(e) { pics = []; }
+
+    // Filtrar entradas nulas o vacías
+    pics = pics.filter(p => p && typeof p === 'string' && p.trim() !== "");
+
     if(pics.length === 0) {
-        grid.innerHTML = '<p style="color:gray;">No hay fotografías subidas. Se mostrará el carrusel por defecto.</p>';
+        grid.innerHTML = '<p style="color:gray; padding: 1rem;">No hay fotografías subidas. Se mostrará el carrusel predeterminado.</p>';
         return;
     }
     
     let h = '';
     pics.forEach((p, idx) => {
+        const direct = getDirectUrl(p);
         h += `
-            <div class="card glass" style="padding: 0; overflow: hidden; position: relative;">
-                <div style="height: 150px; background: url('${getDirectUrl(p)}') center/cover no-repeat;"></div>
-                <button onclick="deleteCarouselPic(${idx})" style="position:absolute; top:5px; right:5px; background:red; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">X</button>
+            <div class="card glass" style="padding: 0; overflow: hidden; position: relative; border-radius: 10px; background: rgba(0,0,0,0.6); min-height: 160px; border: 1px solid var(--glass-border);">
+                <img src="${direct}" alt="Foto ${idx+1}" referrerpolicy="no-referrer" loading="lazy" style="width: 100%; height: 160px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='assets/images/hero_bg.webp'; this.parentElement.querySelector('.badge-broken')?.style.removeProperty('display');">
+                
+                <div class="badge-broken" style="display:none; position:absolute; bottom:6px; left:6px; background:rgba(231,76,60,0.9); color:white; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:4px; z-index:5;">
+                    ⚠️ Enlace roto / no disponible
+                </div>
+
+                <button type="button" onclick="deleteCarouselPic(${idx})" title="Eliminar Fotografía" style="position:absolute; top:8px; right:8px; background:#e74c3c; color:white; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.6); z-index:10; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                    ✕
+                </button>
             </div>
         `;
     });
     grid.innerHTML = h;
+}
+
+function cleanBrokenCarouselPics() {
+    let pics = [];
+    try {
+        pics = JSON.parse(localStorage.getItem('unifreire_carousel_images') || '[]');
+    } catch(e) { pics = []; }
+
+    const initialCount = pics.length;
+    // Limpiar entradas vacías o URLs no válidas
+    pics = pics.filter(p => p && typeof p === 'string' && p.trim().length > 10 && (p.startsWith('http://') || p.startsWith('https://') || p.startsWith('assets/')));
+
+    localStorage.setItem('unifreire_carousel_images', JSON.stringify(pics));
+    renderCarouselAdmin();
+    guardarConfigEnNube('unifreire_carousel_images', JSON.stringify(pics), null);
+    alert(`Limpieza completada. ${initialCount - pics.length} elementos inválidos fueron eliminados.`);
 }
 
 function deleteCarouselPic(idx) {
@@ -443,6 +466,10 @@ document.addEventListener('DOMContentLoaded', () => {
             quillCostSaltillo = new Quill('#ce-cost-saltillo', quillOptions);
             quillModMty = new Quill('#ce-mod-mty', quillOptions);
             quillCostMty = new Quill('#ce-cost-mty', quillOptions);
+            if (document.getElementById('ce-mod-gpe')) {
+                quillModGpe = new Quill('#ce-mod-gpe', quillOptions);
+                quillCostGpe = new Quill('#ce-cost-gpe', quillOptions);
+            }
             
             [quillReqSaltillo, quillModSaltillo, quillCostSaltillo].forEach(q => {
                 q.on('text-change', syncLivePreview);
@@ -564,6 +591,11 @@ function saveCareerChanges() {
         monterrey: {
             modalidades: quillModMty ? quillModMty.root.innerHTML : document.getElementById('ce-mod-mty').innerHTML,
             costos: quillCostMty ? quillCostMty.root.innerHTML : document.getElementById('ce-cost-mty').innerHTML
+        },
+        availableGuadalupe: document.getElementById('ce-flag-guadalupe') ? document.getElementById('ce-flag-guadalupe').checked : true,
+        guadalupe: {
+            modalidades: quillModGpe ? quillModGpe.root.innerHTML : (document.getElementById('ce-mod-gpe') ? document.getElementById('ce-mod-gpe').innerHTML : ''),
+            costos: quillCostGpe ? quillCostGpe.root.innerHTML : (document.getElementById('ce-cost-gpe') ? document.getElementById('ce-cost-gpe').innerHTML : '')
         }
     };
 
@@ -691,20 +723,32 @@ let heroAdjustUrl = "";
 
 function openHeroAdjuster() {
     const url = document.getElementById('hero-url-input').value.trim();
+    const msg = document.getElementById('hero-banner-msg');
     if(!url) {
-        document.getElementById('hero-banner-msg').innerText = "Ingresa un enlace."; 
+        if (msg) msg.innerText = "Por favor ingresa un enlace."; 
         return; 
     }
-    heroAdjustUrl = url;
+    
+    const directUrl = getDirectUrl(url);
+    heroAdjustUrl = directUrl;
     
     document.getElementById('scale-z').value = 100;
     document.getElementById('pos-x').value = 50;
     document.getElementById('pos-y').value = 50;
     
     const preview = document.getElementById('img-preview');
-    preview.style.backgroundImage = `url(${url})`;
-    preview.style.backgroundSize = "100%";
-    preview.style.backgroundPosition = "50% 50%";
+    if (preview) {
+        preview.innerHTML = '';
+        const isVideo = directUrl.endsWith('.mp4') || directUrl.endsWith('.webm') || directUrl.includes('/video/upload/');
+        if (isVideo) {
+            preview.style.backgroundImage = 'none';
+            preview.innerHTML = `<video src="${directUrl}" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;"></video>`;
+        } else {
+            preview.style.backgroundImage = `url('${directUrl}')`;
+            preview.style.backgroundSize = "100%";
+            preview.style.backgroundPosition = "50% 50%";
+        }
+    }
     
     document.getElementById('image-modal').style.display = 'flex';
 }
@@ -730,8 +774,9 @@ function saveImageSetup() {
     const x = document.getElementById('pos-x').value;
     const y = document.getElementById('pos-y').value;
     
+    const directUrl = getDirectUrl(heroAdjustUrl);
     const config = {
-        url: heroAdjustUrl,
+        url: directUrl,
         scale: scale,
         position: `${x}% ${y}%`
     };
