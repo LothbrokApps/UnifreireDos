@@ -178,13 +178,17 @@ function renderCareers(filter) {
         const card = document.createElement('div');
         card.className = 'career-card-visual';
         
-        // Obtener portada personalizada o defaultBanner o fallback
-        const savedCover = localStorage.getItem(`unifreire_portada_${c.id}`) || localStorage.getItem(`unifreire_banner_${c.id}`) || c.defaultBanner || 'assets/images/hero_bg.webp';
+        // Obtener portada personalizada o defaultPortada / defaultBanner (independiente de unifreire_banner_)
+        const savedCover = localStorage.getItem(`unifreire_portada_${c.id}`) || c.defaultPortada || c.defaultBanner || 'assets/images/hero_bg.webp';
+        const coverPos = localStorage.getItem(`unifreire_portada_pos_${c.id}`) || 'center';
+        const coverZoom = localStorage.getItem(`unifreire_portada_zoom_${c.id}`) || 'cover';
         const directUrl = (typeof getDirectUrl === 'function') ? getDirectUrl(savedCover) : savedCover;
         const cv = localStorage.getItem('unifreire_cache_version') || '';
         const finalImgUrl = cv ? (directUrl + (directUrl.includes('?') ? '&' : '?') + 'v=' + cv) : directUrl;
 
         card.style.backgroundImage = `url('${finalImgUrl}')`;
+        card.style.backgroundPosition = coverPos;
+        card.style.backgroundSize = coverZoom.includes('%') ? coverZoom : 'cover';
         card.setAttribute('onclick', `viewCareer('${c.id}')`);
 
         const rvoeText = c.rvoe ? c.rvoe : 'Validez Oficial SEP';
@@ -197,13 +201,13 @@ function renderCareers(filter) {
                 <h3 style="font-size: 1.18rem; font-weight: 700; color: #ffffff; margin: 0 0 0.3rem 0; text-shadow: 0 2px 6px rgba(0,0,0,0.85); line-height: 1.25;">${c.name}</h3>
                 <p style="font-size: 0.84rem; color: rgba(255,255,255,0.88); margin: 0 0 0.5rem 0; font-weight: 500;">${c.type} • ${c.duration}</p>
                 
-                <!-- Badge de RVOE Oficial (sin ★ 5.0) -->
+                <!-- Badge de RVOE Oficial (sin ★ 5.0) optimizado para móvil -->
                 <div style="display: flex; align-items: center; margin-bottom: 0.85rem;">
-                    <div style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; border-radius: 20px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 184, 28, 0.45); font-size: 0.72rem; color: #ffb81c; font-weight: 600; max-width: 100%; box-sizing: border-box;">
+                    <div class="rvoe-badge" data-rvoe="true" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.65rem; border-radius: 20px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 184, 28, 0.45); font-size: 0.72rem; color: #ffb81c; font-weight: 600; max-width: 100%; box-sizing: border-box; line-height: 1.25;">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffb81c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                         </svg>
-                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${rvoeText}</span>
+                        <span class="rvoe-text" style="color: #ffb81c !important;">${rvoeText}</span>
                     </div>
                 </div>
 

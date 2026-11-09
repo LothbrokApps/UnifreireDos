@@ -235,11 +235,11 @@ const CAREERS_DATA = {
 
 
 const DEFAULT_PLANTELES = [
-    { nombre: "Plantel Centro", ubicacion: "📍 José María Arteaga 240<br>Zona Centro, Saltillo, Coah.", telefono: "📲 (844) 410-5762", liga: "https://maps.app.goo.gl/tbLyqT6qCdnmW3in6" },
-    { nombre: "Plantel Matamoros", ubicacion: "📍 Mariano Matamoros 766<br>Zona Centro, Saltillo, Coah.", telefono: "📲 (844) 726-0527", liga: "https://maps.app.goo.gl/L3NqmizFhWFZWsFw9" },
-    { nombre: "Plantel Sur", ubicacion: "📍 Calle 2 #2648, esq. Blvd. Hidalgo<br>Fracc. Miguel Hidalgo, Saltillo, Coah.", telefono: "📲 (844) 112-4654", liga: "https://maps.app.goo.gl/v49aGjP2VZUDNmpSA" },
-    { nombre: "Plantel Monterrey", ubicacion: "📍 Albino Espinosa Ote 324<br>entre Galeana y E. Carranza, N.L.", telefono: "📲 (81) 163-70651", liga: "https://maps.app.goo.gl/fEiJBCyAh1eWbuLt7" },
-    { nombre: "Plantel Guadalupe N.L.", ubicacion: "📍 Plaza Mirador Av. Pablo Livas #2500<br>Col. Mirador de la Silla 1er Sector, Gpe. N.L.", telefono: "📲 (81) 23631099", liga: "https://www.google.com/maps/place/UNIFREIRE+PLANTEL+GUADALUPE/data=!4m2!3m1!1s0x0:0x7bcd21cd84c22cab?sa=X&ved=1t:2428&ictx=111" }
+    { nombre: "Plantel Centro", ubicacion: "📍 José María Arteaga 240<br>Zona Centro, Saltillo, Coah.", telefono: "(844) 410-5762", liga: "https://maps.app.goo.gl/tbLyqT6qCdnmW3in6" },
+    { nombre: "Plantel Matamoros", ubicacion: "📍 Mariano Matamoros 766<br>Zona Centro, Saltillo, Coah.", telefono: "(844) 726-0527", liga: "https://maps.app.goo.gl/L3NqmizFhWFZWsFw9" },
+    { nombre: "Plantel Sur", ubicacion: "📍 Calle 2 #2648, esq. Blvd. Hidalgo<br>Fracc. Miguel Hidalgo, Saltillo, Coah.", telefono: "(844) 112-4654", liga: "https://maps.app.goo.gl/v49aGjP2VZUDNmpSA" },
+    { nombre: "Plantel Monterrey", ubicacion: "📍 Albino Espinosa Ote 324<br>entre Galeana y E. Carranza, N.L.", telefono: "(81) 163-70651", liga: "https://maps.app.goo.gl/fEiJBCyAh1eWbuLt7" },
+    { nombre: "Plantel Guadalupe N.L.", ubicacion: "📍 Plaza Mirador Av. Pablo Livas #2500<br>Col. Mirador de la Silla 1er Sector, Gpe. N.L.", telefono: "(81) 23631099", liga: "https://www.google.com/maps/place/UNIFREIRE+PLANTEL+GUADALUPE/data=!4m2!3m1!1s0x0:0x7bcd21cd84c22cab?sa=X&ved=1t:2428&ictx=111" }
 ];
 
 function renderPlantelesFooter() {
@@ -253,7 +253,7 @@ function renderPlantelesFooter() {
             // Asegurar que Guadalupe siempre cuente con su teléfono y liga actualizados
             planteles = planteles.map(p => {
                 if (p.nombre && p.nombre.toLowerCase().includes('guadalupe')) {
-                    if (!p.telefono || p.telefono.includes('163-70651')) p.telefono = "📲 (81) 23631099";
+                    if (!p.telefono || p.telefono.includes('163-70651')) p.telefono = "(81) 23631099";
                     if (!p.liga || p.liga === '#' || p.liga.trim() === '') p.liga = "https://www.google.com/maps/place/UNIFREIRE+PLANTEL+GUADALUPE/data=!4m2!3m1!1s0x0:0x7bcd21cd84c22cab?sa=X&ved=1t:2428&ictx=111";
                 }
                 return p;
@@ -261,14 +261,20 @@ function renderPlantelesFooter() {
         }
     } catch(e) {}
 
-    container.innerHTML = planteles.map(p => `
+    container.innerHTML = planteles.map(p => {
+        const cleanPhone = (p.telefono || '').replace(/^📲\s*/, '').trim();
+        return `
         <div class="plantel-card-item">
             <h4 class="plantel-title">${p.nombre}</h4>
             <p class="plantel-address">${p.ubicacion}</p>
-            <p class="plantel-phone">${p.telefono}</p>
+            <p class="plantel-phone">
+                <img src="assets/images/whatsapp_icon.png" alt="WhatsApp" class="plantel-wa-icon">
+                <span class="phone-number">${cleanPhone}</span>
+            </p>
             <a href="${p.liga}" target="_blank" rel="noopener noreferrer" class="btn-accent plantel-btn">Ver en Google Maps</a>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 document.addEventListener('DOMContentLoaded', () => {

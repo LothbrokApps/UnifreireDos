@@ -261,10 +261,27 @@ async function guardarConfigEnNube(llave, valor, msgElement) {
 
 function updateCareerBanner(id) {
     const msg = document.getElementById(`msg-${id}`);
-    const url = document.getElementById(`url-${id}`).value.trim();
-    if(!url) { msg.innerText = "Ingresa un enlace."; return; }
-    localStorage.setItem(`unifreire_banner_${id}`, url);
-    guardarConfigEnNube(`unifreire_banner_${id}`, url, msg);
+    const input = document.getElementById(`url-${id}`);
+    if (!input) return;
+    const rawUrl = input.value.trim();
+    if(!rawUrl) { if(msg) msg.innerText = "Ingresa un enlace."; return; }
+    const directUrl = typeof getDirectUrl === 'function' ? getDirectUrl(rawUrl) : rawUrl;
+    
+    // Guardar ÚNICAMENTE en banner (100% independiente de portada)
+    localStorage.setItem(`unifreire_banner_${id}`, directUrl);
+    localStorage.setItem('unifreire_cache_version', Date.now().toString());
+
+    // Actualizar vista previa en el panel
+    const preview = document.getElementById(`preview-banner-${id}`);
+    if (preview) {
+        preview.style.backgroundImage = `url('${directUrl}')`;
+    }
+    
+    if(typeof guardarConfigEnNube === 'function') {
+        guardarConfigEnNube(`unifreire_banner_${id}`, directUrl, msg);
+    }
+    if(msg) msg.innerText = "¡Banner guardado!";
+    setTimeout(() => { if(msg && msg.innerText.includes("¡Banner")) msg.innerText = ""; }, 3000);
 }
 
 document.addEventListener('dragover', (e) => {
@@ -335,7 +352,70 @@ function exportExcel() {
     link.remove();
 }
 
-// Carousel Logic
+// Carousel Logic & Drag and Drop Reordering
+let draggedCarouselIdx = null;
+
+function onCarouselDragStart(e, idx) {
+    draggedCarouselIdx = idx;
+    e.dataTransfer.setData('text/plain', idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.4';
+}
+
+function onCarouselDragEnd(e) {
+    e.currentTarget.style.opacity = '1';
+    draggedCarouselIdx = null;
+    document.querySelectorAll('.carousel-admin-card').forEach(el => {
+        el.style.borderColor = 'var(--glass-border)';
+        el.style.transform = 'scale(1)';
+    });
+}
+
+function onCarouselDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function onCarouselDragEnter(e) {
+    e.preventDefault();
+    const card = e.currentTarget;
+    card.style.borderColor = 'var(--unifreire-yellow)';
+    card.style.transform = 'scale(1.03)';
+}
+
+function onCarouselDragLeave(e) {
+    const card = e.currentTarget;
+    card.style.borderColor = 'var(--glass-border)';
+    card.style.transform = 'scale(1)';
+}
+
+function onCarouselDrop(e, targetIdx) {
+    e.preventDefault();
+    const card = e.currentTarget;
+    card.style.borderColor = 'var(--glass-border)';
+    card.style.transform = 'scale(1)';
+    const fromIdx = draggedCarouselIdx !== null ? draggedCarouselIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+    draggedCarouselIdx = null;
+    if (!isNaN(fromIdx) && fromIdx !== targetIdx) {
+        reorderCarouselPics(fromIdx, targetIdx);
+    }
+}
+
+function moveCarouselPic(fromIdx, direction) {
+    const toIdx = fromIdx + direction;
+    reorderCarouselPics(fromIdx, toIdx);
+}
+
+function reorderCarouselPics(fromIdx, toIdx) {
+    let pics = JSON.parse(localStorage.getItem('unifreire_carousel_images') || '[]');
+    if (fromIdx < 0 || fromIdx >= pics.length || toIdx < 0 || toIdx >= pics.length) return;
+    const [item] = pics.splice(fromIdx, 1);
+    pics.splice(toIdx, 0, item);
+    localStorage.setItem('unifreire_carousel_images', JSON.stringify(pics));
+    renderCarouselAdmin();
+    guardarConfigEnNube('unifreire_carousel_images', JSON.stringify(pics), null);
+}
+
 function renderCarouselAdmin() {
     const grid = document.getElementById('carousel-preview-grid');
     if(!grid) return;
@@ -357,11 +437,23 @@ function renderCarouselAdmin() {
     pics.forEach((p, idx) => {
         const direct = getDirectUrl(p);
         h += `
-            <div class="card glass" style="padding: 0; overflow: hidden; position: relative; border-radius: 10px; background: rgba(0,0,0,0.6); min-height: 160px; border: 1px solid var(--glass-border);">
-                <img src="${direct}" alt="Foto ${idx+1}" referrerpolicy="no-referrer" loading="lazy" style="width: 100%; height: 160px; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='assets/images/hero_bg.webp'; this.parentElement.querySelector('.badge-broken')?.style.removeProperty('display');">
+            <div class="card glass carousel-admin-card" draggable="true" ondragstart="onCarouselDragStart(event, ${idx})" ondragend="onCarouselDragEnd(event)" ondragover="onCarouselDragOver(event)" ondragenter="onCarouselDragEnter(event)" ondragleave="onCarouselDragLeave(event)" ondrop="onCarouselDrop(event, ${idx})" style="padding: 0; overflow: hidden; position: relative; border-radius: 12px; background: rgba(0,0,0,0.6); min-height: 170px; border: 1px solid var(--glass-border); cursor: grab; transition: transform 0.2s, border-color 0.2s;">
+                <img src="${direct}" alt="Foto ${idx+1}" referrerpolicy="no-referrer" loading="lazy" style="width: 100%; height: 160px; object-fit: cover; display: block; pointer-events: none;" onerror="this.onerror=null; this.src='assets/images/hero_bg.webp'; this.parentElement.querySelector('.badge-broken')?.style.removeProperty('display');">
                 
-                <div class="badge-broken" style="display:none; position:absolute; bottom:6px; left:6px; background:rgba(231,76,60,0.9); color:white; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:4px; z-index:5;">
+                <div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.75); color: var(--unifreire-yellow); font-size: 11px; font-weight: bold; padding: 3px 8px; border-radius: 6px; z-index: 5; pointer-events: none; border: 1px solid rgba(255,184,28,0.4);">
+                    ☰ #${idx + 1}
+                </div>
+
+                <div class="badge-broken" style="display:none; position:absolute; bottom:40px; left:6px; background:rgba(231,76,60,0.9); color:white; font-size:10px; font-weight:bold; padding:2px 8px; border-radius:4px; z-index:5;">
                     ⚠️ Enlace roto / no disponible
+                </div>
+
+                <div style="position: absolute; bottom: 6px; left: 6px; right: 6px; display: flex; justify-content: space-between; align-items: center; z-index: 5;">
+                    <div style="display: flex; gap: 4px;">
+                        <button type="button" onclick="moveCarouselPic(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''} title="Mover a la izquierda" class="btn-primary" style="padding: 2px 8px; font-size: 11px; border-radius: 4px; background: rgba(0,77,54,0.85);">◀</button>
+                        <button type="button" onclick="moveCarouselPic(${idx}, 1)" ${idx === pics.length - 1 ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''} title="Mover a la derecha" class="btn-primary" style="padding: 2px 8px; font-size: 11px; border-radius: 4px; background: rgba(0,77,54,0.85);">▶</button>
+                    </div>
+                    <span style="font-size: 10px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.6); padding: 2px 6px; border-radius: 4px;">Arrastra para reordenar</span>
                 </div>
 
                 <button type="button" onclick="deleteCarouselPic(${idx})" title="Eliminar Fotografía" style="position:absolute; top:8px; right:8px; background:#e74c3c; color:white; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.6); z-index:10; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
@@ -508,16 +600,23 @@ function loadCareers() {
 
         // Banners tab
         if(bannerGrid) {
+            const savedBanner = localStorage.getItem(`unifreire_banner_${c.id}`) || c.defaultBanner || '';
+            const previewUrl = typeof getDirectUrl === 'function' ? getDirectUrl(savedBanner) : savedBanner;
             bannerHtml += `
-                <div class="card glass" style="min-height: 150px; padding: 1rem;">
-                    <div style="font-size: 0.8rem; color: var(--unifreire-yellow);">${c.type}</div>
-                    <h4 style="margin: 0.5rem 0; font-size: 1.1rem;">${c.name}</h4>
+                <div class="card glass" style="min-height: 150px; padding: 1.2rem; border-radius: 14px; display: flex; flex-direction: column;">
+                    <div style="font-size: 0.8rem; color: var(--unifreire-yellow); font-weight: 600; text-transform: uppercase;">${c.type}</div>
+                    <h4 style="margin: 0.5rem 0 0.8rem 0; font-size: 1.1rem; color: white;">${c.name}</h4>
                     
-                    <div style="margin-top: 1rem;">
-                       <input type="text" id="url-${c.id}" placeholder="Enlace directo Google Drive" style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white; font-size: 0.8rem; margin-bottom: 0.5rem;">
-                       <button class="btn-primary" style="width: 100%; font-size: 0.8rem; padding: 0.4rem;" onclick="updateCareerBanner('${c.id}')">Guardar Enlace</button>
+                    <div id="preview-banner-${c.id}" style="width: 100%; height: 110px; border-radius: 8px; background: url('${previewUrl}') center/cover no-repeat; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 0.8rem;"></div>
+
+                    <div style="margin-top: auto;">
+                       <input type="text" id="url-${c.id}" value="${savedBanner}" placeholder="Enlace directo Google Drive o URL" style="width: 100%; padding: 0.55rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white; font-size: 0.8rem; margin-bottom: 0.5rem; box-sizing: border-box;">
+                       <div style="display: flex; gap: 0.5rem;">
+                           <button class="btn-primary" style="flex: 1; font-size: 0.8rem; padding: 0.45rem;" onclick="openCareerBannerAdjuster('${c.id}')">Ajustar Encuadre</button>
+                           <button class="btn-accent" style="flex: 1; font-size: 0.8rem; padding: 0.45rem;" onclick="updateCareerBanner('${c.id}')">Guardar</button>
+                       </div>
                     </div>
-                    <p id="msg-${c.id}" style="color: var(--unifreire-yellow); font-size: 0.8rem; margin-top: 0.5rem;"></p>
+                    <p id="msg-${c.id}" style="color: var(--unifreire-yellow); font-size: 0.8rem; margin-top: 0.5rem; text-align: center; min-height: 1.2rem; margin-bottom:0;"></p>
                 </div>
             `;
         }
@@ -719,7 +818,11 @@ function deletePlantel() {
 // =========================================
 // HERO BANNER ADJUSTER
 // =========================================
-let heroAdjustUrl = "";
+// UNIVERSAL IMAGE ADJUSTER (HERO, BANNERS Y PORTADAS)
+// =========================================
+let currentAdjustMode = 'hero'; // 'hero' | 'career_banner' | 'career_portada'
+let currentAdjustCareerId = null;
+let currentAdjustUrl = '';
 
 function openHeroAdjuster() {
     const url = document.getElementById('hero-url-input').value.trim();
@@ -729,13 +832,86 @@ function openHeroAdjuster() {
         return; 
     }
     
-    const directUrl = getDirectUrl(url);
-    heroAdjustUrl = directUrl;
+    currentAdjustMode = 'hero';
+    currentAdjustCareerId = null;
+    currentAdjustUrl = getDirectUrl(url);
+
+    setupAdjusterModal("Ajustar Encuadre: Hero Banner Principal", "banner", currentAdjustUrl, 100, 50, 50);
+}
+
+function openCareerBannerAdjuster(careerId) {
+    const c = (typeof CAREERS_DATA !== 'undefined') ? CAREERS_DATA[careerId] : null;
+    const input = document.getElementById(`url-${careerId}`);
+    const rawUrl = (input && input.value.trim()) || localStorage.getItem(`unifreire_banner_${careerId}`) || (c ? c.defaultBanner : '');
+    const msg = document.getElementById(`msg-${careerId}`);
     
-    document.getElementById('scale-z').value = 100;
-    document.getElementById('pos-x').value = 50;
-    document.getElementById('pos-y').value = 50;
+    if(!rawUrl) {
+        if(msg) msg.innerText = "Por favor ingresa un enlace.";
+        return;
+    }
+
+    currentAdjustMode = 'career_banner';
+    currentAdjustCareerId = careerId;
+    currentAdjustUrl = getDirectUrl(rawUrl);
+
+    const savedPos = localStorage.getItem(`unifreire_banner_pos_${careerId}`) || '50% 50%';
+    const savedZoom = localStorage.getItem(`unifreire_banner_zoom_${careerId}`) || '100%';
+    const parts = savedPos.split(' ');
+    const posX = parseInt(parts[0]) || 50;
+    const posY = parseInt(parts[1]) || 50;
+    const zoomVal = parseInt(savedZoom) || 100;
+
+    const careerTitle = c ? c.name : careerId;
+    setupAdjusterModal(`Ajustar Banner de Carrera: ${careerTitle}`, "banner", currentAdjustUrl, zoomVal, posX, posY);
+}
+
+function openCareerPortadaAdjuster(careerId) {
+    const c = (typeof CAREERS_DATA !== 'undefined') ? CAREERS_DATA[careerId] : null;
+    const input = document.getElementById(`url-portada-${careerId}`);
+    const rawUrl = (input && input.value.trim()) || localStorage.getItem(`unifreire_portada_${careerId}`) || (c ? (c.defaultPortada || c.defaultBanner) : '');
+    const msg = document.getElementById(`msg-portada-${careerId}`);
     
+    if(!rawUrl) {
+        if(msg) msg.innerText = "Por favor ingresa un enlace.";
+        return;
+    }
+
+    currentAdjustMode = 'career_portada';
+    currentAdjustCareerId = careerId;
+    currentAdjustUrl = getDirectUrl(rawUrl);
+
+    const savedPos = localStorage.getItem(`unifreire_portada_pos_${careerId}`) || '50% 50%';
+    const savedZoom = localStorage.getItem(`unifreire_portada_zoom_${careerId}`) || '100%';
+    const parts = savedPos.split(' ');
+    const posX = parseInt(parts[0]) || 50;
+    const posY = parseInt(parts[1]) || 50;
+    const zoomVal = parseInt(savedZoom) || 100;
+
+    const careerTitle = c ? c.name : careerId;
+    setupAdjusterModal(`Ajustar Foto de Portada (Tarjeta Home): ${careerTitle}`, "portada", currentAdjustUrl, zoomVal, posX, posY);
+}
+
+function setupAdjusterModal(titleText, aspectType, directUrl, zoomVal, posX, posY) {
+    const modalTitle = document.getElementById('image-modal-title');
+    if (modalTitle) modalTitle.innerText = titleText;
+
+    const previewBox = document.getElementById('img-preview-box');
+    if (previewBox) {
+        if (aspectType === 'portada') {
+            previewBox.style.width = '260px';
+            previewBox.style.height = '340px';
+            previewBox.style.maxWidth = '90vw';
+        } else {
+            previewBox.style.width = '90%';
+            previewBox.style.height = '250px';
+            previewBox.style.maxWidth = '900px';
+        }
+    }
+
+    document.getElementById('scale-z').value = zoomVal || 100;
+    document.getElementById('pos-x').value = posX || 50;
+    document.getElementById('pos-y').value = posY || 50;
+
     const preview = document.getElementById('img-preview');
     if (preview) {
         preview.innerHTML = '';
@@ -745,12 +921,17 @@ function openHeroAdjuster() {
             preview.innerHTML = `<video src="${directUrl}" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;"></video>`;
         } else {
             preview.style.backgroundImage = `url('${directUrl}')`;
-            preview.style.backgroundSize = "100%";
-            preview.style.backgroundPosition = "50% 50%";
+            preview.style.backgroundSize = `${zoomVal || 100}%`;
+            preview.style.backgroundPosition = `${posX || 50}% ${posY || 50}%`;
         }
     }
-    
+
     document.getElementById('image-modal').style.display = 'flex';
+}
+
+function closeImageAdjuster() {
+    const modal = document.getElementById('image-modal');
+    if (modal) modal.style.display = 'none';
 }
 
 function updatePreviewStyle() {
@@ -759,8 +940,10 @@ function updatePreviewStyle() {
     const y = document.getElementById('pos-y').value;
     
     const preview = document.getElementById('img-preview');
-    preview.style.backgroundSize = `${z}%`;
-    preview.style.backgroundPosition = `${x}% ${y}%`;
+    if (preview) {
+        preview.style.backgroundSize = `${z}%`;
+        preview.style.backgroundPosition = `${x}% ${y}%`;
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -769,30 +952,78 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pos-y')?.addEventListener('input', updatePreviewStyle);
 });
 
-function saveImageSetup() {
-    const scale = document.getElementById('scale-z').value / 100;
+function saveAdjustedImage() {
+    const z = document.getElementById('scale-z').value;
+    const scale = z / 100;
     const x = document.getElementById('pos-x').value;
     const y = document.getElementById('pos-y').value;
-    
-    const directUrl = getDirectUrl(heroAdjustUrl);
-    const config = {
-        url: directUrl,
-        scale: scale,
-        position: `${x}% ${y}%`
-    };
-    
-    localStorage.setItem('unifreire_hero_banner', JSON.stringify(config));
-    // Disparar limpiador de caché global (Cache Buster)
+    const posStr = `${x}% ${y}%`;
+    const zoomStr = `${z}%`;
+    const directUrl = getDirectUrl(currentAdjustUrl);
+
+    // Cache buster global
     localStorage.setItem('unifreire_cache_version', Date.now().toString());
 
-    document.getElementById('image-modal').style.display = 'none';
-    const msg = document.getElementById('hero-banner-msg');
-    msg.innerText = "Hero Banner ajustado y guardado exitosamente.";
-    
-    // Attempt saving to cloud if that function exists
-    if(typeof guardarConfigEnNube === 'function') {
-        guardarConfigEnNube('unifreire_hero_banner', JSON.stringify(config), msg);
+    if (currentAdjustMode === 'hero') {
+        const config = {
+            url: directUrl,
+            scale: scale,
+            position: posStr
+        };
+        localStorage.setItem('unifreire_hero_banner', JSON.stringify(config));
+        const msg = document.getElementById('hero-banner-msg');
+        if (msg) msg.innerText = "Hero Banner ajustado y guardado exitosamente.";
+        if (typeof guardarConfigEnNube === 'function') {
+            guardarConfigEnNube('unifreire_hero_banner', JSON.stringify(config), msg);
+        }
+    } else if (currentAdjustMode === 'career_banner') {
+        const id = currentAdjustCareerId;
+        // Guardar SOLO en banner (100% independiente de portada)
+        localStorage.setItem(`unifreire_banner_${id}`, directUrl);
+        localStorage.setItem(`unifreire_banner_pos_${id}`, posStr);
+        localStorage.setItem(`unifreire_banner_zoom_${id}`, zoomStr);
+
+        const preview = document.getElementById(`preview-banner-${id}`);
+        if (preview) {
+            preview.style.backgroundImage = `url('${directUrl}')`;
+        }
+
+        const msg = document.getElementById(`msg-${id}`);
+        if (msg) msg.innerText = "¡Banner de carrera ajustado y guardado!";
+        if (typeof guardarConfigEnNube === 'function') {
+            guardarConfigEnNube(`unifreire_banner_${id}`, directUrl, msg);
+            guardarConfigEnNube(`unifreire_banner_pos_${id}`, posStr, null);
+            guardarConfigEnNube(`unifreire_banner_zoom_${id}`, zoomStr, null);
+        }
+    } else if (currentAdjustMode === 'career_portada') {
+        const id = currentAdjustCareerId;
+        // Guardar SOLO en portada (100% independiente de banner)
+        localStorage.setItem(`unifreire_portada_${id}`, directUrl);
+        localStorage.setItem(`unifreire_portada_pos_${id}`, posStr);
+        localStorage.setItem(`unifreire_portada_zoom_${id}`, zoomStr);
+
+        // Actualizar preview en panel
+        const preview = document.getElementById(`preview-portada-${id}`);
+        if (preview) {
+            preview.style.backgroundImage = `url('${directUrl}')`;
+            preview.style.backgroundPosition = posStr;
+            preview.style.backgroundSize = zoomStr;
+        }
+
+        const msg = document.getElementById(`msg-portada-${id}`);
+        if (msg) msg.innerText = "¡Foto de portada ajustada y guardada!";
+        if (typeof guardarConfigEnNube === 'function') {
+            guardarConfigEnNube(`unifreire_portada_${id}`, directUrl, msg);
+            guardarConfigEnNube(`unifreire_portada_pos_${id}`, posStr, null);
+            guardarConfigEnNube(`unifreire_portada_zoom_${id}`, zoomStr, null);
+        }
     }
+
+    closeImageAdjuster();
+}
+
+function saveImageSetup() {
+    saveAdjustedImage();
 }
 
 
@@ -873,7 +1104,10 @@ function renderPortadasAdmin() {
 
     let html = '';
     Object.values(CAREERS_DATA).forEach(c => {
-        const saved = localStorage.getItem(`unifreire_portada_${c.id}`) || localStorage.getItem(`unifreire_banner_${c.id}`) || c.defaultBanner || '';
+        // 100% independiente de unifreire_banner_
+        const saved = localStorage.getItem(`unifreire_portada_${c.id}`) || c.defaultPortada || c.defaultBanner || '';
+        const savedPos = localStorage.getItem(`unifreire_portada_pos_${c.id}`) || 'center';
+        const savedZoom = localStorage.getItem(`unifreire_portada_zoom_${c.id}`) || 'cover';
         const previewUrl = typeof getDirectUrl === 'function' ? getDirectUrl(saved) : saved;
 
         html += `
@@ -881,15 +1115,18 @@ function renderPortadasAdmin() {
                 <div style="font-size: 0.8rem; color: var(--unifreire-yellow); font-weight: 600; text-transform: uppercase; margin-bottom: 0.3rem;">${c.type}</div>
                 <h4 style="margin: 0 0 1rem 0; font-size: 1.15rem; color: white;">${c.name}</h4>
                 
-                <!-- Vista previa de la portada -->
-                <div id="preview-portada-${c.id}" style="width: 100%; height: 160px; border-radius: 12px; background: url('${previewUrl}') center/cover no-repeat; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 1rem; position: relative; overflow: hidden;">
-                    <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; color: #fff; backdrop-filter: blur(4px);">Vista previa actual</div>
+                <!-- Vista previa de la portada (con posición y zoom guardados) -->
+                <div id="preview-portada-${c.id}" style="width: 100%; height: 160px; border-radius: 12px; background: url('${previewUrl}') ${savedPos}/${savedZoom.includes('%') ? savedZoom : 'cover'} no-repeat; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 1rem; position: relative; overflow: hidden;">
+                    <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; color: #fff; backdrop-filter: blur(4px);">Vista previa portada</div>
                 </div>
 
                 <div style="margin-top: auto;">
                     <label style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Enlace Google Drive o URL:</label>
                     <input type="text" id="url-portada-${c.id}" placeholder="https://drive.google.com/..." value="${saved}" style="width: 100%; padding: 0.6rem; border-radius: 6px; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white; font-size: 0.85rem; margin-bottom: 0.6rem; box-sizing: border-box;">
-                    <button class="btn-primary" style="width: 100%; padding: 0.6rem; font-size: 0.9rem;" onclick="saveCareerPortada('${c.id}')">Guardar Fotografía</button>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-primary" style="flex: 1; padding: 0.55rem; font-size: 0.82rem;" onclick="openCareerPortadaAdjuster('${c.id}')">Ajustar Encuadre</button>
+                        <button class="btn-accent" style="flex: 1; padding: 0.55rem; font-size: 0.82rem;" onclick="saveCareerPortada('${c.id}')">Guardar</button>
+                    </div>
                     <p id="msg-portada-${c.id}" style="color: var(--unifreire-yellow); font-size: 0.8rem; margin-top: 0.5rem; text-align: center; min-height: 1.2rem; margin-bottom: 0;"></p>
                 </div>
             </div>
@@ -912,9 +1149,8 @@ function saveCareerPortada(id) {
 
     const directUrl = typeof getDirectUrl === 'function' ? getDirectUrl(rawUrl) : rawUrl;
     
-    // Guardar en almacenamiento local
+    // Guardar ÚNICAMENTE en portada (100% independiente de banner)
     localStorage.setItem(`unifreire_portada_${id}`, directUrl);
-    localStorage.setItem(`unifreire_banner_${id}`, directUrl);
     
     // Activar Cache Buster para reflejar cambios inmediatos en usuarios
     localStorage.setItem('unifreire_cache_version', Date.now().toString());
@@ -928,7 +1164,6 @@ function saveCareerPortada(id) {
     // Guardar en la nube si está disponible
     if (typeof guardarConfigEnNube === 'function') {
         guardarConfigEnNube(`unifreire_portada_${id}`, directUrl, msg);
-        guardarConfigEnNube(`unifreire_banner_${id}`, directUrl, null);
     }
     
     msg.innerText = "¡Fotografía actualizada y guardada!";

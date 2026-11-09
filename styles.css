@@ -970,6 +970,18 @@ body {
     font-weight: 600;
     color: #ffffff;
     margin: 0 0 0.8rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.plantel-wa-icon {
+    width: 17px;
+    height: 17px;
+    object-fit: contain;
+    vertical-align: -2px;
+    margin-right: 6px;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .plantel-btn {
@@ -1022,6 +1034,67 @@ body {
     padding-bottom: 0.4rem;
 }
 
+/* ========================================================
+   BADGES ESTILIZADOS BAJO PLAN DE ESTUDIOS
+   ======================================================== */
+.plan-badges-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    margin: 0.6rem 0 1.5rem 0;
+}
+
+.plan-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.25;
+    box-sizing: border-box;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.plan-badge-pill.pill-duration {
+    background: rgba(255, 184, 28, 0.15);
+    border: 1px solid rgba(255, 184, 28, 0.45);
+    color: var(--unifreire-yellow);
+}
+
+.plan-badge-pill.pill-rvoe {
+    background: rgba(0, 77, 54, 0.65);
+    border: 1px solid rgba(255, 184, 28, 0.4);
+    color: #ffffff;
+}
+
+.plan-badge-pill.pill-plantel {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.92);
+}
+
+/* Protección anti enlaces azules en RVOEs / Teléfonos móviles */
+.rvoe-badge, .rvoe-badge *, [data-rvoe], [data-rvoe] *, a[href^="tel"]:not(.phone-link) {
+    color: inherit !important;
+    text-decoration: none !important;
+    pointer-events: none;
+}
+.rvoe-badge a, [data-rvoe] a {
+    color: inherit !important;
+    text-decoration: none !important;
+    pointer-events: none !important;
+}
+.rvoe-text {
+    display: inline-block;
+    word-break: normal;
+    white-space: normal;
+    line-height: 1.25;
+}
+
 @media (max-width: 1200px) {
     #planteles-container {
         grid-template-columns: repeat(3, 1fr) !important;
@@ -1031,7 +1104,10 @@ body {
 @media (max-width: 768px) {
     #planteles-container {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.8rem !important;
+        gap: 0.85rem !important;
+    }
+    #planteles-container .plantel-card-item:last-child {
+        grid-column: 1 / -1 !important;
     }
     .plantel-title {
         font-size: 0.95rem;
@@ -1045,10 +1121,39 @@ body {
     .planteles-subgrid {
         grid-template-columns: 1fr;
     }
+    .plan-badges-bar {
+        gap: 0.35rem;
+        margin: 0.5rem 0 1.2rem 0;
+    }
+    .plan-badge-pill {
+        font-size: 0.72rem;
+        padding: 0.28rem 0.6rem;
+    }
 }
 
 @media (max-width: 480px) {
     #planteles-container {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.65rem !important;
+    }
+    #planteles-container .plantel-card-item:last-child {
+        grid-column: 1 / -1 !important;
+    }
+    .plantel-card-item {
+        padding: 0.85rem 0.65rem !important;
+    }
+    .plantel-title {
+        font-size: 0.86rem !important;
+    }
+    .plantel-address {
+        font-size: 0.72rem !important;
+        min-height: auto !important;
+    }
+    .plantel-phone {
+        font-size: 0.74rem !important;
+    }
+    .plantel-btn {
+        font-size: 0.72rem !important;
+        padding: 0.4rem 0.5rem !important;
     }
 }
