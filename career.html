@@ -398,7 +398,39 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 
     <script src="data.js"></script>
     <script>
+        function applyStoredTheme() {
+            try {
+                const stored = localStorage.getItem('unifreire_theme_config');
+                if (stored) {
+                    const cfg = JSON.parse(stored);
+                    const root = document.documentElement;
+                    if (cfg.orb1) root.style.setProperty('--ambient-orb-1', cfg.orb1);
+                    if (cfg.orb2) root.style.setProperty('--ambient-orb-2', cfg.orb2);
+                    if (cfg.bgDark) root.style.setProperty('--bg-dark', cfg.bgDark);
+                    if (cfg.opacity !== undefined) root.style.setProperty('--orb-opacity', (cfg.opacity / 100).toString());
+                    if (cfg.blur !== undefined) root.style.setProperty('--orb-blur', `${cfg.blur}px`);
+                }
+            } catch(e) {}
+        }
+
+        function recordTelemetryEvent(type, data) {
+            try {
+                const raw = localStorage.getItem('unifreire_analytics_events');
+                let events = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(events)) events = [];
+                events.push({
+                    type: type,
+                    timestamp: Date.now(),
+                    careerId: localStorage.getItem('carreraSeleccionada') || '',
+                    ...(data || {})
+                });
+                if (events.length > 500) events = events.slice(-500);
+                localStorage.setItem('unifreire_analytics_events', JSON.stringify(events));
+            } catch(e) {}
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            applyStoredTheme();
             const id = localStorage.getItem('carreraSeleccionada');
             if(!id || !CAREERS_DATA[id]) {
                 window.location.href = 'index.html';
@@ -502,11 +534,23 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 
             document.getElementById('c-desc').innerText = override.description || carrera.description;
 
-            // Configurar enlaces WhatsApp
+            // Configurar enlaces WhatsApp con telemetría
             const mensaje = encodeURIComponent(`Hola, quisiera más información sobre la carrera ${carrera.name}`);
-            if (document.getElementById('wa-saltillo')) document.getElementById('wa-saltillo').href = `https://wa.me/528444550030?text=${mensaje}`;
-            if (document.getElementById('wa-mty')) document.getElementById('wa-mty').href = `https://wa.me/528116370651?text=${mensaje}`;
-            if (document.getElementById('wa-guadalupe')) document.getElementById('wa-guadalupe').href = `https://wa.me/528123631099?text=${mensaje}`;
+            const waSaltillo = document.getElementById('wa-saltillo');
+            if (waSaltillo) {
+                waSaltillo.href = `https://wa.me/528444550030?text=${mensaje}`;
+                waSaltillo.addEventListener('click', () => recordTelemetryEvent('whatsapp_click', { plantel: 'saltillo' }));
+            }
+            const waMty = document.getElementById('wa-mty');
+            if (waMty) {
+                waMty.href = `https://wa.me/528116370651?text=${mensaje}`;
+                waMty.addEventListener('click', () => recordTelemetryEvent('whatsapp_click', { plantel: 'monterrey' }));
+            }
+            const waGpe = document.getElementById('wa-guadalupe');
+            if (waGpe) {
+                waGpe.href = `https://wa.me/528123631099?text=${mensaje}`;
+                waGpe.addEventListener('click', () => recordTelemetryEvent('whatsapp_click', { plantel: 'guadalupe' }));
+            }
 
             // Acordeones Plan de Estudio
             const planContainer = document.getElementById('plan-container');
@@ -559,7 +603,7 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
             }
         }
         function aplicar() {
-
+            recordTelemetryEvent('career_apply_click', { careerId: localStorage.getItem('carreraSeleccionada') || '' });
             window.location.href = "admissions.html";
         }
     </script>

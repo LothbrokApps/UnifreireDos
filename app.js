@@ -106,6 +106,87 @@ function decryptPayload(encryptedData) {
     }
 }
 
+// =========================================
+// TELEMETRÍA Y ANALÍTICA EN TIEMPO REAL
+// =========================================
+function recordTelemetryEvent(type, data) {
+    try {
+        const raw = localStorage.getItem('unifreire_analytics_events');
+        let events = [];
+        if (raw) {
+            events = JSON.parse(raw);
+            if (!Array.isArray(events)) events = [];
+        }
+        const newEvent = {
+            type: type,
+            timestamp: Date.now(),
+            ...(data || {})
+        };
+        events.push(newEvent);
+        // Mantener hasta 500 eventos para optimizar memoria en iOS/Android
+        if (events.length > 500) {
+            events = events.slice(-500);
+        }
+        localStorage.setItem('unifreire_analytics_events', JSON.stringify(events));
+    } catch(e) {}
+}
+
+// =========================================
+// APLICACIÓN DINÁMICA DE PLANTILLAS Y LUCES AMBIENTALES
+// =========================================
+function applyStoredTheme() {
+    try {
+        const stored = localStorage.getItem('unifreire_theme_config');
+        if (stored) {
+            const cfg = JSON.parse(stored);
+            const root = document.documentElement;
+            if (cfg.orb1) root.style.setProperty('--ambient-orb-1', cfg.orb1);
+            if (cfg.orb2) root.style.setProperty('--ambient-orb-2', cfg.orb2);
+            if (cfg.bgDark) root.style.setProperty('--bg-dark', cfg.bgDark);
+            if (cfg.opacity !== undefined) root.style.setProperty('--orb-opacity', (cfg.opacity / 100).toString());
+            if (cfg.blur !== undefined) root.style.setProperty('--orb-blur', `${cfg.blur}px`);
+        }
+    } catch(e) {}
+}
+
+// =========================================
+// APLICACIÓN DINÁMICA DE TEXTOS WEB (MINI-CMS)
+// =========================================
+function applyStoredSiteTexts() {
+    try {
+        const stored = localStorage.getItem('unifreire_site_texts');
+        if (!stored) return;
+        const texts = JSON.parse(stored);
+
+        // 1. Titular Principal del Hero
+        const heroTitle = document.querySelector('.hero-content h1');
+        if (heroTitle && texts.hero_title) {
+            heroTitle.innerHTML = texts.hero_title;
+        }
+
+        // 2. Experiencia Jaguar
+        const expSection = document.getElementById('experiencia-jaguar');
+        if (expSection) {
+            const expH2 = expSection.querySelector('h2');
+            const expP = expSection.querySelector('p');
+            if (expH2 && texts.exp_title) expH2.innerHTML = texts.exp_title;
+            if (expP && texts.exp_desc) expP.innerHTML = texts.exp_desc;
+        }
+
+        // 3. Título de Planteles
+        const plantelesH3 = document.querySelector('footer h3');
+        if (plantelesH3 && texts.planteles_title) {
+            plantelesH3.innerHTML = texts.planteles_title;
+        }
+
+        // 4. Footer Copy
+        const footerP = document.querySelector('footer > p:last-child');
+        if (footerP && texts.footer_copy) {
+            footerP.innerHTML = texts.footer_copy;
+        }
+    } catch(e) {}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Contador de Visitas Global
     let localVisits = parseInt(localStorage.getItem('unifreire_visit_count') || '0');
@@ -113,13 +194,18 @@ document.addEventListener('DOMContentLoaded', () => {
         localVisits++;
         localStorage.setItem('unifreire_visit_count', localVisits.toString());
         sessionStorage.setItem('visited_this_session', 'true');
-        // Opcional: Enviar ping al servidor para conteo global
         try { fetch(GLOBAL_BACKEND_URL + "?action=registrarVisita", { method: "POST", mode: "no-cors" }); } catch(e){}
     }
 
+    // 2. Registrar Telemetría de Visita y Hora Pico
+    recordTelemetryEvent('visit_hour', { hour: new Date().getHours() });
+
+    // 3. Aplicar Estilos, Plantillas y Textos Dinámicos
+    applyStoredTheme();
+    applyStoredSiteTexts();
     cargarConfigDesdeNube();
     
-    // Hamburger Menu Logic
+    // 4. Hamburger Menu Logic
     const hamburger = document.getElementById('hamburger-menu');
     const navLinks = document.getElementById('nav-links');
     if (hamburger && navLinks) {
@@ -141,6 +227,46 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dynamic Hero Loading
     const savedHero = localStorage.getItem('unifreire_hero_banner');
     applyHeroMedia(savedHero);
+
+    // Clicks en WhatsApp Telemetría
+    document.querySelectorAll('a[href*="wa.me"], a[href*="whatsapp"]').forEach(el => {
+        el.addEventListener('click', () => {
+            recordTelemetryEvent('whatsapp_click', { url: el.href });
+        });
+    });
+
+    // Tracking de Profundidad de Scroll (Retención / Embudo)
+    let scrollThresholds = { 25: false, 50: false, 75: false, 100: false };
+    window.addEventListener('scroll', () => {
+        const totalScrollable = document.documentElement.scrollHeight - window.innerHeight;
+        if (totalScrollable > 0) {
+            const scrollPercent = Math.round((window.scrollY / totalScrollable) * 100);
+            [25, 50, 75, 100].forEach(threshold => {
+                if (scrollPercent >= threshold && !scrollThresholds[threshold]) {
+                    scrollThresholds[threshold] = true;
+                    recordTelemetryEvent('scroll_depth', { depth: threshold });
+                }
+            });
+        }
+    }, { passive: true });
+
+    // Tracking de Interacción por Secciones
+    const trackedSections = ['carreras', 'experiencia-jaguar', 'planteles-container'];
+    if ('IntersectionObserver' in window) {
+        const trackedObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    recordTelemetryEvent('section_view', { sectionId: entry.target.id });
+                    trackedObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.25 });
+
+        trackedSections.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) trackedObserver.observe(el);
+        });
+    }
 
     const grid = document.getElementById('careers-grid');
     const filterBtns = document.querySelectorAll('.filter-btn');
@@ -226,6 +352,7 @@ function renderCareers(filter) {
 }
 
 function viewCareer(id) {
+    recordTelemetryEvent('career_click', { careerId: id });
     localStorage.setItem("carreraSeleccionada", id);
     window.location.href = "career.html";
 }
@@ -234,8 +361,6 @@ async function cargarConfigDesdeNube() {
     try {
         const res = await fetch(GLOBAL_BACKEND_URL + "?action=obtenerConfig");
         const config = await res.json();
-        
-        
         
         if (config.hero_banner) {
             localStorage.setItem('unifreire_hero_banner', typeof config.hero_banner === 'string' ? config.hero_banner : JSON.stringify(config.hero_banner));
@@ -259,6 +384,18 @@ async function cargarConfigDesdeNube() {
                     header.style.backgroundImage = `url('${finalBannerUrl}')`;
                 }
             });
+        }
+
+        if (config.unifreire_site_texts) {
+            const siteTexts = typeof config.unifreire_site_texts === 'string' ? config.unifreire_site_texts : JSON.stringify(config.unifreire_site_texts);
+            localStorage.setItem('unifreire_site_texts', siteTexts);
+            applyStoredSiteTexts();
+        }
+
+        if (config.unifreire_theme_config) {
+            const themeCfg = typeof config.unifreire_theme_config === 'string' ? config.unifreire_theme_config : JSON.stringify(config.unifreire_theme_config);
+            localStorage.setItem('unifreire_theme_config', themeCfg);
+            applyStoredTheme();
         }
     } catch(err) {
         console.error("Error sincronizando config desde la nube:", err);

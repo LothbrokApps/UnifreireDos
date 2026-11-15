@@ -188,6 +188,8 @@
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -208,58 +210,396 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 </head>
-<body style="background-color: #0a0a0a;">
+<body style="background-color: #0b0e0c;">
     
+    <!-- Password Overlay con Cifrado Salteado SHA-256 y Anti-Fuerza Bruta -->
     <div id="password-overlay">
-        <div class="password-box">
-            <img loading="lazy" src="assets/images/logo.png" style="height: 60px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); margin-bottom: 1rem;">
-            <h3>Acceso Administrativo</h3>
-            <input type="password" id="admin-pass" placeholder="Contraseña">
-            <button class="btn-primary" onclick="checkAdminPassword()" style="width: 100%;">Ingresar</button>
-            <p id="pass-error" style="color: #ff4d4d; margin-top: 1rem; display: none;">Contraseña incorrecta</p>
-            <a href="index.html" style="color: var(--text-secondary); display: block; margin-top: 2rem; text-decoration: none;">← Volver al sitio</a>
+        <div class="password-box" style="background: rgba(18, 24, 20, 0.95); border: 1px solid rgba(140, 248, 45, 0.35); border-radius: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.85); padding: 2.8rem 2rem;">
+            <img loading="lazy" src="assets/images/logo.png" style="height: 55px; filter: drop-shadow(0px 2px 8px rgba(0,0,0,0.7)); margin-bottom: 1.2rem;">
+            <h3 style="color:#ffffff; font-size:1.35rem; font-weight:700; margin-bottom:0.4rem;">Panel Administrativo</h3>
+            <p style="color:rgba(255,255,255,0.6); font-size:0.82rem; margin-bottom:1.6rem;">Acceso Cifrado SHA-256 • Unifreire 2026</p>
+            <input type="password" id="admin-pass" placeholder="Ingresa tu contraseña" autocomplete="current-password" style="border: 1px solid rgba(140, 248, 45, 0.45); border-radius: 10px; background: rgba(0,0,0,0.6); color: #ffffff; padding: 0.9rem; font-size: 1.1rem; text-align: center; width: 100%; box-sizing: border-box; outline: none;">
+            <button class="btn-primary" id="btn-login-submit" onclick="checkAdminPassword()" style="width: 100%; background: #8cf82d; color: #060e07; font-weight: 700; border: none; padding: 0.9rem; border-radius: 10px; cursor: pointer; box-shadow: 0 0 16px rgba(140,248,45,0.35); font-size: 0.95rem; margin-top: 1rem; transition: transform 0.2s;">Ingresar al Dashboard</button>
+            <p id="pass-error" style="color: #ff6b6b; margin-top: 1rem; font-size: 0.85rem; display: none;">Contraseña incorrecta</p>
+            <p id="lockout-msg" style="color: #ffb81c; margin-top: 1rem; font-size: 0.82rem; display: none; line-height: 1.4;"></p>
+            <a href="index.html" style="color: rgba(255,255,255,0.5); display: block; margin-top: 2rem; text-decoration: none; font-size: 0.82rem;">← Volver al sitio principal</a>
         </div>
     </div>
 
-    <div class="admin-layout">
-        <aside class="sidebar">
-            <div class="sidebar-brand" style="margin-bottom: 2rem;">
-                <img loading="lazy" src="assets/images/logo.png" style="height: 40px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));">
-            </div>
-            <a class="nav-item active" onclick="switchTab('leads')">Ver Leads</a>
-            <a class="nav-item" onclick="switchTab('carreras')">Gestión de Carreras</a>
-            <a class="nav-item" onclick="switchTab('marketing')">Banners</a>
+    <!-- Overlay móvil para cerrar sidebar -->
+    <div class="admin-sidebar-overlay" id="admin-sidebar-overlay" onclick="toggleAdminMobileMenu()"></div>
 
-            <a class="nav-item" onclick="switchTab('carrusel')">Control Carrusel</a>
-            <a class="nav-item" onclick="switchTab('portadas')">Foto de portadas</a>
-            <a class="nav-item" href="index.html" style="margin-top: auto; position: absolute; bottom: 20px; width: 200px;">← Volver a la Web</a>
+    <div class="admin-layout-v2">
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-brand">
+                <img loading="lazy" src="assets/images/logo.png" alt="Unifreire Logo">
+                <div class="admin-brand-info">
+                    <h4>UNIFREIRE</h4>
+                    <span>Dashboard 2026</span>
+                </div>
+            </div>
+
+            <nav class="admin-nav">
+                <a class="admin-nav-item active" id="tablink-analytics" onclick="switchTab('analytics')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 17v-4M12 17v-7M16 17v-11"/></svg>
+                    <span>Métricas & Tráfico</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-leads" onclick="switchTab('leads')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <span>Leads de Admisión</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-textos" onclick="switchTab('textos')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    <span>Textos Web (CMS)</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-estilos" onclick="switchTab('estilos')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+                    <span>Estilos & Plantillas</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-carreras" onclick="switchTab('carreras')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    <span>Planes de Estudio</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-marketing" onclick="switchTab('marketing')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span>Banners Principales</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-portadas" onclick="switchTab('portadas')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    <span>Foto de Portadas</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-carrusel" onclick="switchTab('carrusel')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="m10 8 6 4-6 4z"/></svg>
+                    <span>Control Carrusel</span>
+                </a>
+                <a class="admin-nav-item" id="tablink-planteles" onclick="switchTab('planteles')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Planteles</span>
+                </a>
+                <a class="admin-nav-item" href="index.html" style="margin-top: auto; color: rgba(255,255,255,0.5);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    <span>Volver a la Web</span>
+                </a>
+            </nav>
         </aside>
 
-        <main class="main-content">
-            
-            <!-- LEADS TAB -->
-            <div id="leads" class="tab-content active">
-                <div class="header-action">
-                    <h2>Leads de Admisión</h2>
-                    <button class="btn-accent" onclick="exportExcel()">Exportar a Excel</button>
+        <main class="admin-main">
+            <!-- Barra Superior Ejecutiva -->
+            <div class="admin-topbar">
+                <div class="admin-topbar-left">
+                    <button class="admin-mobile-toggle" onclick="toggleAdminMobileMenu()" title="Abrir Menú">☰</button>
+                    <div class="admin-breadcrumb">
+                        <h1 class="admin-breadcrumb-title" id="admin-current-section-title">Estadísticas & Métricas</h1>
+                        <span class="admin-breadcrumb-sub">Panel de Administración Integral • Unifreire</span>
+                    </div>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Carrera de Interés</th>
-                            <th>Teléfono</th>
-                            <th>Nivel</th>
-                            <th>Creación</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leads-body">
-                        <!-- Loaded by admin.js -->
-                    </tbody>
-                </table>
+                <div class="admin-topbar-actions">
+                    <span class="admin-status-pill">● Sistema Activo</span>
+                    <button class="admin-logout-btn" onclick="logoutAdmin()">Cerrar Sesión ⎋</button>
+                </div>
             </div>
 
-            <!-- CARRERAS TAB -->
+            <!-- 1. ANALYTICS TAB (DEFAULT) -->
+            <div id="analytics" class="tab-content active">
+                <div class="header-action">
+                    <div>
+                        <h2>Estadísticas & Métricas de Tráfico</h2>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 0.3rem;">Telemetría en tiempo real de interacción estudiantil, conversión y retención web.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
+                        <button class="btn-primary" onclick="refreshAnalyticsData()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; background: rgba(255,255,255,0.08); border: 1px solid var(--admin-card-border);">⟳ Actualizar Datos</button>
+                        <button class="btn-accent" onclick="exportAnalyticsCSV()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem;">📥 Descargar Reporte CSV</button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Visitas Totales</span>
+                            <span class="kpi-badge positive">▲ +18.4%</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-visitas">0</div>
+                        <div class="kpi-subtext">Tráfico acumulado del sitio web</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Leads de Admisión</span>
+                            <span class="kpi-badge positive">▲ +24.1%</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-leads">0</div>
+                        <div class="kpi-subtext">Aspirantes registrados en plataforma</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Tasa de Conversión</span>
+                            <span class="kpi-badge positive">▲ Óptimo</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-conversion">0%</div>
+                        <div class="kpi-subtext">Porcentaje visitas vs registros</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Carrera Líder</span>
+                            <span class="kpi-badge positive">★ Top Interés</span>
+                        </div>
+                        <div class="kpi-value" id="kpi-top-carrera" style="font-size: 1.2rem; line-height: 1.3; min-height: 44px; display: flex; align-items: center;">-</div>
+                        <div class="kpi-subtext">Mayor volumen de clics e interacción</div>
+                    </div>
+                </div>
+
+                <!-- Grids de Analítica -->
+                <div class="analytics-grid">
+                    <!-- Columna 1: Tráfico por Horas y Horarios Pico -->
+                    <div class="analytics-card">
+                        <div class="analytics-card-title">
+                            <span>Visibilidad por Horarios (24 Horas)</span>
+                            <span style="font-size: 0.75rem; color: var(--admin-accent-neon); font-weight: 500;">Picos Activos</span>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="hourlyVisitsChart"></canvas>
+                        </div>
+                        <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.2rem;">
+                            <h4 style="font-size: 0.88rem; color: var(--unifreire-yellow); margin-bottom: 0.9rem;">Horarios de Mayor a Menor Visibilidad</h4>
+                            <div id="peak-hours-list">
+                                <!-- Loaded dynamically by admin.js -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna 2: Funnel de Retención y Abandono -->
+                    <div class="analytics-card">
+                        <div class="analytics-card-title">
+                            <span>Punto de Abandono (Funnel)</span>
+                            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">Profundidad de Scroll</span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 1.4rem;">Identifica en qué sección el usuario abandona la página para optimizar llamadas a la acción.</p>
+                        
+                        <div id="dropoff-funnel-list">
+                            <!-- Loaded dynamically by admin.js -->
+                        </div>
+
+                        <div style="margin-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.2rem;">
+                            <h4 style="font-size: 0.88rem; color: var(--unifreire-yellow); margin-bottom: 0.9rem;">Interacción por Secciones</h4>
+                            <div id="section-interaction-list">
+                                <!-- Loaded dynamically by admin.js -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ranking de Carreras con Mayor Clics -->
+                <div class="analytics-card" style="margin-bottom: 2rem;">
+                    <div class="analytics-card-title">
+                        <span>Ranking de Interés por Carreras (Clics e Intención de Registro)</span>
+                        <span style="font-size: 0.75rem; color: var(--admin-accent-neon);">Tiempo Real</span>
+                    </div>
+                    <div id="careers-ranking-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem;">
+                        <!-- Dynamic list -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. LEADS TAB -->
+            <div id="leads" class="tab-content">
+                <div class="header-action">
+                    <div>
+                        <h2>Leads de Admisión</h2>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 0.3rem;">Registros capturados desde formularios web y campañas oficiales.</p>
+                    </div>
+                    <button class="btn-accent" onclick="exportExcel()">Exportar a Excel</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Carrera de Interés</th>
+                                <th>Teléfono</th>
+                                <th>Nivel</th>
+                                <th>Creación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leads-body">
+                            <!-- Loaded by admin.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 3. TEXTOS WEB (MINI-CMS) TAB (EXCLUYE BECAS) -->
+            <div id="textos" class="tab-content">
+                <div class="header-action">
+                    <div>
+                        <h2>Gestor Modular de Textos Web (Mini-CMS)</h2>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 0.3rem;">Edita los contenidos clave del sitio web con sanitización de seguridad DOMPurify y publicación inmediata.</p>
+                    </div>
+                    <button class="btn-accent" onclick="saveAllSiteTexts()">💾 Guardar Todos los Textos</button>
+                </div>
+
+                <!-- 1. Home / Identidad -->
+                <div class="cms-section-card">
+                    <h3>1. Home / Identidad Institucional</h3>
+                    <p class="desc">Ajusta el titular principal del Hero y las frases de presentación del campus.</p>
+                    
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Titular Principal del Hero <span>(Texto grande sobre el video de bienvenida)</span></label>
+                        <input type="text" id="cms-hero-title" class="cms-input" placeholder="Tu Historia empieza aquí">
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Título Sección Experiencia Jaguar <span>(Encabezado de carrusel social)</span></label>
+                        <input type="text" id="cms-exp-title" class="cms-input" placeholder="Experiencia Jaguar">
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Descripción de Experiencia Jaguar <span>(Texto informativo debajo del título)</span></label>
+                        <textarea id="cms-exp-desc" class="cms-textarea" rows="2" placeholder="Conoce más sobre la vida estudiantil, eventos institucionales y la garra que nos distingue. Ser Jaguar es llevar el éxito en el ADN."></textarea>
+                    </div>
+                </div>
+
+                <!-- 2. Planteles -->
+                <div class="cms-section-card">
+                    <h3>2. Sección de Nuestros Planteles</h3>
+                    <p class="desc">Configura los mensajes informativos y de horarios para aspirantes.</p>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Título de la Sección de Planteles</label>
+                        <input type="text" id="cms-planteles-title" class="cms-input" placeholder="Nuestros Planteles">
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Horario General de Atención y Admisiones <span>(Visible en información de contacto)</span></label>
+                        <input type="text" id="cms-planteles-horario" class="cms-input" placeholder="Lunes a Viernes 8:00 AM - 7:00 PM | Sábados 8:00 AM - 3:00 PM">
+                    </div>
+                </div>
+
+                <!-- 3. Costos y Modalidades de Carreras -->
+                <div class="cms-section-card">
+                    <h3>3. Costos y Modalidades de Carreras</h3>
+                    <p class="desc">Notas institucionales que orientan sobre la flexibilidad y turnos sin examen de admisión.</p>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Nota Informativa de Inscripción y Pagos <span>(Aclaración general para nuevos ingresos)</span></label>
+                        <textarea id="cms-costos-nota" class="cms-textarea" rows="2" placeholder="Planes cuatrimestrales flexibles con titulación directa y validez oficial SEP. Consulta facilidades y turnos en cada plantel."></textarea>
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Aclaración de Turnos (Escolarizado / Mixto) <span>(Información para alumnos que trabajan)</span></label>
+                        <input type="text" id="cms-modalidades-aclaracion" class="cms-input" placeholder="Modalidad escolarizada matutina e intermedia (L-V) y Turno Mixto Ejecutivo (Sábado o Domingo)">
+                    </div>
+                </div>
+
+                <!-- 4. Footer y Contacto -->
+                <div class="cms-section-card">
+                    <h3>4. Footer y Contacto Oficial</h3>
+                    <p class="desc">Datos legales, teléfono conmutador y derechos reservados.</p>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Texto de Derechos Reservados <span>(Pie de página)</span></label>
+                        <input type="text" id="cms-footer-copy" class="cms-input" placeholder="© 2026 UNIFREIRE. Todos los derechos reservados.">
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Teléfono Conmutador Central</label>
+                        <input type="text" id="cms-footer-phone" class="cms-input" placeholder="(844) 410-5762">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                    <button class="btn-accent" onclick="saveAllSiteTexts()" style="padding: 0.85rem 2rem; font-size: 0.95rem;">Guardar y Publicar Textos</button>
+                    <button class="btn-primary" onclick="resetDefaultSiteTexts()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">Restablecer Predeterminados</button>
+                </div>
+                <p id="cms-status-msg" style="color: var(--admin-accent-neon); font-size: 0.9rem; margin-top: 1rem; font-weight: 600;"></p>
+            </div>
+
+            <!-- 4. ESTILOS Y PLANTILLAS TAB -->
+            <div id="estilos" class="tab-content">
+                <div class="header-action">
+                    <div>
+                        <h2>Estilos, Luces Ambientales y Plantillas Institucionales</h2>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 0.3rem;">Elige entre 3 plantillas predefinidas o calibra los colores, orbes de luz y desenfoque ambiental.</p>
+                    </div>
+                    <button class="btn-accent" onclick="saveThemeCustomizer()">🎨 Guardar Estilo Visual</button>
+                </div>
+
+                <!-- 3 Plantillas Predefinidas -->
+                <h3 style="color: var(--unifreire-yellow); font-size: 1.2rem; margin-bottom: 1rem;">Plantillas Predefinidas</h3>
+                <div class="theme-presets-grid">
+                    <!-- Template 1: Jaguar Elegance -->
+                    <div class="theme-card active" id="preset-jaguar" onclick="selectThemePreset('jaguar')">
+                        <div class="theme-preview-palette">
+                            <div class="palette-color" style="background: #ffb81c;" title="Oro Jaguar"></div>
+                            <div class="palette-color" style="background: #004d36;" title="Verde Pino Institucional"></div>
+                            <div class="palette-color" style="background: #0d1310;" title="Fondo Carbón"></div>
+                        </div>
+                        <h4 style="margin: 0 0 0.4rem 0; font-size: 1.05rem; color: white;">Jaguar Elegance (Oficial)</h4>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin: 0; line-height: 1.4;">Combinación clásica de Oro Jaguar, verde pino profundo y fondos carbón con orbes luminosos cálidos.</p>
+                    </div>
+
+                    <!-- Template 2: Campus Midnight -->
+                    <div class="theme-card" id="preset-midnight" onclick="selectThemePreset('midnight')">
+                        <div class="theme-preview-palette">
+                            <div class="palette-color" style="background: #00e5ff;" title="Cian Tecnológico"></div>
+                            <div class="palette-color" style="background: #ffb81c;" title="Oro Institucional"></div>
+                            <div class="palette-color" style="background: #0d1b2a;" title="Azul Medianoche"></div>
+                        </div>
+                        <h4 style="margin: 0 0 0.4rem 0; font-size: 1.05rem; color: white;">Campus Midnight</h4>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin: 0; line-height: 1.4;">Estética tecnológica premium en azul medianoche con destellos cian e iluminación de alto contraste.</p>
+                    </div>
+
+                    <!-- Template 3: Modern Academic -->
+                    <div class="theme-card" id="preset-academic" onclick="selectThemePreset('academic')">
+                        <div class="theme-preview-palette">
+                            <div class="palette-color" style="background: #8cf82d;" title="Verde Lima Neón"></div>
+                            <div class="palette-color" style="background: #ffffff;" title="Blanco Puro"></div>
+                            <div class="palette-color" style="background: #101211;" title="Carbón Mate"></div>
+                        </div>
+                        <h4 style="margin: 0 0 0.4rem 0; font-size: 1.05rem; color: white;">Modern Academic</h4>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.8rem; margin: 0; line-height: 1.4;">Diseño ejecutivo minimalista con acentos verde lima neón inspirados en tableros de analítica moderna.</p>
+                    </div>
+                </div>
+
+                <!-- Calibrador de Luces Ambientales -->
+                <div class="cms-section-card">
+                    <h3>Calibrador Personalizado de Luces y Blur</h3>
+                    <p class="desc">Ajusta los halos de luz decorativos de fondo que iluminan la experiencia visual de los usuarios.</p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label class="cms-field-label">Color Luz Ambiental 1</label>
+                            <input type="color" id="theme-orb-1" value="#004D36" style="width: 100%; height: 44px; border-radius: 8px; border: 1px solid var(--admin-card-border); background: transparent; cursor: pointer;">
+                        </div>
+                        <div>
+                            <label class="cms-field-label">Color Luz Ambiental 2</label>
+                            <input type="color" id="theme-orb-2" value="#FFB81C" style="width: 100%; height: 44px; border-radius: 8px; border: 1px solid var(--admin-card-border); background: transparent; cursor: pointer;">
+                        </div>
+                        <div>
+                            <label class="cms-field-label">Color de Fondo General</label>
+                            <input type="color" id="theme-bg-dark" value="#0b0e0c" style="width: 100%; height: 44px; border-radius: 8px; border: 1px solid var(--admin-card-border); background: transparent; cursor: pointer;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label class="cms-field-label">Opacidad de Luces: <span id="theme-opacity-val">35%</span></label>
+                            <input type="range" id="theme-opacity-slider" min="10" max="80" value="35" style="width: 100%; margin-top: 0.5rem;" oninput="document.getElementById('theme-opacity-val').innerText = this.value + '%'">
+                        </div>
+                        <div>
+                            <label class="cms-field-label">Difuminado Blur: <span id="theme-blur-val">80px</span></label>
+                            <input type="range" id="theme-blur-slider" min="30" max="180" value="80" style="width: 100%; margin-top: 0.5rem;" oninput="document.getElementById('theme-blur-val').innerText = this.value + 'px'">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn-accent" onclick="saveThemeCustomizer()" style="padding: 0.8rem 1.8rem;">Guardar y Aplicar Estilos</button>
+                        <button class="btn-primary" onclick="resetThemeDefaults()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);">Restablecer a Fábrica</button>
+                    </div>
+                    <p id="theme-status-msg" style="color: var(--admin-accent-neon); font-size: 0.9rem; margin-top: 1rem; font-weight: 600;"></p>
+                </div>
+            </div>
+
+            <!-- 5. CARRERAS TAB -->
             <div id="carreras" class="tab-content">
                 <div class="header-action">
                     <h2>Gestión de Carreras (Planes de estudio)</h2>
@@ -270,16 +610,15 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                 </div>
             </div>
 
-            <!-- MARKETING TAB -->
+            <!-- 6. MARKETING TAB -->
             <div id="marketing" class="tab-content">
                 <div class="header-action">
-                    <h2>Banners</h2>
-                    
+                    <h2>Banners Principales</h2>
                 </div>
                 
                 <div class="card glass" style="margin-bottom: 2rem;">
-                    <h3>Banner Principal (Hero)</h3>
-                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Actualiza la fotografía de la pantalla principal (Pega el enlace directo de Google Drive).</p>
+                    <h3>Hero Banner Principal (1920 × 1080 px HD)</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">Actualiza la fotografía o video de la pantalla principal (Pega el enlace directo de Google Drive o video Cloudinary).</p>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                         <input type="text" id="hero-url-input" placeholder="Ej. https://drive.google.com/uc?export=view&id=1XyZabc..." style="flex-grow: 1; min-width: 250px; padding: 0.8rem; border-radius: 4px; border: 1px solid var(--glass-border); background: var(--bg-dark); color: white;">
                         <button class="btn-primary" onclick="openHeroAdjuster()">Ajustar y Guardar</button>
@@ -287,17 +626,15 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                     <p id="hero-banner-msg" style="color: var(--unifreire-yellow); margin-top: 1rem;"></p>
                 </div>
                 
-                <h3 style="color: var(--unifreire-yellow); margin-bottom: 1.5rem; margin-top: 2rem;">Banners de Carreras Individuales</h3>
+                <h3 style="color: var(--unifreire-yellow); margin-bottom: 1.5rem; margin-top: 2rem;">Banners de Carreras Individuales (1600 × 520 px)</h3>
                 <div class="grid-container" style="padding: 0; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))" id="admin-campanas-banners-grid"></div>
             </div>
 
-
-
-            <!-- FOTO DE PORTADAS TAB -->
+            <!-- 7. FOTO DE PORTADAS TAB -->
             <div id="portadas" class="tab-content">
                 <div class="header-action">
                     <div>
-                        <h2>Foto de Portadas de Carreras</h2>
+                        <h2>Foto de Portadas de Carreras (600 × 800 px)</h2>
                         <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">Personaliza la fotografía que se muestra en las tarjetas principales del Home para cada carrera (pega el enlace de Google Drive o URL directa).</p>
                     </div>
                 </div>
@@ -306,7 +643,7 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                 </div>
             </div>
 
-            <!-- CARRUSEL TAB -->
+            <!-- 8. CARRUSEL TAB -->
             <div id="carrusel" class="tab-content">
                 <div class="header-action">
                     <h2>Control de Carrusel (Experiencia Jaguar)</h2>
@@ -343,7 +680,32 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                     <div id="admin-visit-count" style="font-size: 2.2rem; font-weight: bold; color: var(--unifreire-yellow);">0</div>
                     <div style="font-size: 0.65rem; color: var(--unifreire-green-light); margin-top: 0.5rem; text-align: center;">Cifrado AES-256 Activo</div>
                 </div>
+            </div>
 
+            <!-- 9. PLANTELES TAB -->
+            <div id="planteles" class="tab-content">
+                <div class="header-action">
+                    <div>
+                        <h2>Planteles Institucionales</h2>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 0.3rem;">Administra las direcciones, teléfonos oficiales y enlaces a Google Maps.</p>
+                    </div>
+                    <button class="btn-accent" onclick="openPlantelEditor(-1)">+ Agregar Plantel</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Plantel</th>
+                                <th>Ubicación</th>
+                                <th>Teléfono</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="planteles-admin-body">
+                            <!-- Loaded by admin.js -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </main>
@@ -351,38 +713,140 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 
     <script src="data.js"></script>
     <script>
+        // ==========================================================================
+        // AUTENTICACIÓN ROBUSTA CON HASH SALTEADO (SHA-256) Y ANTI-FUERZA BRUTA
+        // ==========================================================================
+        const AUTH_SALT = "unifreire_secure_salt_2026_marketing";
+        const EXPECTED_HASH = "f880885f06786479d5655f3e11cb93d9885ed2607d0a7884cad915ccf6e54d5e";
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_MINUTES = 15;
+
         function checkAdminPassword() {
-            const val = document.getElementById('admin-pass').value;
-            if(val === 'Marketing2026') {
-                document.getElementById('password-overlay').style.display = 'none';
+            const now = Date.now();
+            const lockoutUntil = parseInt(localStorage.getItem('unifreire_lockout_until') || '0');
+            const passError = document.getElementById('pass-error');
+            const lockoutMsg = document.getElementById('lockout-msg');
+            const submitBtn = document.getElementById('btn-login-submit');
+
+            if (now < lockoutUntil) {
+                const remainingMin = Math.ceil((lockoutUntil - now) / 60000);
+                if (lockoutMsg) {
+                    lockoutMsg.style.display = 'block';
+                    lockoutMsg.innerText = `⛔ Demasiados intentos fallidos. Acceso bloqueado temporalmente por seguridad. Reintenta en ${remainingMin} minuto(s).`;
+                }
+                if (submitBtn) submitBtn.disabled = true;
+                return;
             } else {
-                document.getElementById('pass-error').style.display = 'block';
+                if (lockoutMsg) lockoutMsg.style.display = 'none';
+                if (submitBtn) submitBtn.disabled = false;
+            }
+
+            const input = document.getElementById('admin-pass');
+            const val = input ? input.value : '';
+            if (!val) return;
+
+            // Hash criptográfico con sal SHA-256
+            const hash = CryptoJS.SHA256(AUTH_SALT + val).toString();
+
+            if (hash === EXPECTED_HASH) {
+                // Éxito: Crear token de sesión con 2 horas de caducidad
+                const tokenData = {
+                    token: CryptoJS.SHA256(hash + now).toString(),
+                    expiresAt: now + (2 * 60 * 60 * 1000)
+                };
+                sessionStorage.setItem('unifreire_admin_token', JSON.stringify(tokenData));
+                sessionStorage.setItem('unifreire_admin_auth', 'true');
+                localStorage.removeItem('unifreire_login_attempts');
+                localStorage.removeItem('unifreire_lockout_until');
+
+                document.getElementById('password-overlay').style.display = 'none';
+                if (passError) passError.style.display = 'none';
+                if (input) input.value = '';
+
+                // Inicializar analítica y datos al ingresar
+                if (typeof initAnalyticsAdmin === 'function') initAnalyticsAdmin();
+            } else {
+                // Intento fallido
+                let attempts = parseInt(localStorage.getItem('unifreire_login_attempts') || '0') + 1;
+                localStorage.setItem('unifreire_login_attempts', attempts.toString());
+
+                if (attempts >= MAX_ATTEMPTS) {
+                    const lockTime = now + (LOCKOUT_MINUTES * 60 * 1000);
+                    localStorage.setItem('unifreire_lockout_until', lockTime.toString());
+                    if (lockoutMsg) {
+                        lockoutMsg.style.display = 'block';
+                        lockoutMsg.innerText = `⛔ 5 intentos fallidos. Has sido bloqueado por 15 minutos por seguridad de fuerza bruta.`;
+                    }
+                    if (submitBtn) submitBtn.disabled = true;
+                }
+
+                if (passError) {
+                    passError.style.display = 'block';
+                    passError.innerText = `Contraseña incorrecta. Intento ${attempts} de ${MAX_ATTEMPTS}.`;
+                }
             }
         }
-        
-        document.getElementById('admin-pass').addEventListener('keypress', function(e) {
-            if(e.key === 'Enter') checkAdminPassword();
+
+        function verifyAdminSession() {
+            try {
+                const tokenRaw = sessionStorage.getItem('unifreire_admin_token');
+                if (tokenRaw) {
+                    const tokenData = JSON.parse(tokenRaw);
+                    if (tokenData && tokenData.expiresAt && Date.now() < tokenData.expiresAt) {
+                        const overlay = document.getElementById('password-overlay');
+                        if (overlay) overlay.style.display = 'none';
+                        return true;
+                    }
+                }
+            } catch(e) {}
+            return false;
+        }
+
+        function logoutAdmin() {
+            sessionStorage.removeItem('unifreire_admin_token');
+            sessionStorage.removeItem('unifreire_admin_auth');
+            window.location.href = "index.html";
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            verifyAdminSession();
+            document.getElementById('admin-pass')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') checkAdminPassword();
+            });
         });
     </script>
     <script src="admin.js"></script>
 
-    <!-- Image Position Modal Universal -->
-    <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:10000; align-items:center; justify-content:center; flex-direction:column; padding: 1rem; box-sizing: border-box;">
-        <h3 id="image-modal-title" style="color:white; margin-bottom: 0.5rem; font-size: 1.6rem; text-align: center;">Ajustar Encuadre de Imagen</h3>
-        <p id="image-modal-desc" style="color: var(--text-secondary); margin-bottom: 1.5rem; text-align: center; font-size: 0.9rem;">Utiliza las barras para mover la fotografía y previsualizar cómo se verá.</p>
-        <div id="img-preview-box" style="width: 90%; height: 250px; max-width: 900px; border: 2px solid var(--unifreire-yellow); overflow: hidden; position: relative; border-radius: 12px; background: #000; box-shadow: 0 8px 30px rgba(0,0,0,0.8); transition: width 0.3s, height 0.3s, max-width 0.3s;">
+    <!-- Image Position Modal Universal (Medidas exactas HD y Zoom 50% - 300%) -->
+    <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.94); z-index:10000; align-items:center; justify-content:center; flex-direction:column; padding: 1rem; box-sizing: border-box;">
+        <h3 id="image-modal-title" style="color:white; margin-bottom: 0.4rem; font-size: 1.5rem; text-align: center;">Ajustar Encuadre de Imagen</h3>
+        <p id="image-modal-desc" style="color: var(--text-secondary); margin-bottom: 1.2rem; text-align: center; font-size: 0.88rem;">Utiliza las barras para calibrar la posición exacta y el zoom con margen seguro.</p>
+        
+        <div id="img-preview-box" style="width: 90%; height: 260px; max-width: 920px; border: 2px solid var(--unifreire-yellow); overflow: hidden; position: relative; border-radius: 14px; background: #000; box-shadow: 0 10px 35px rgba(0,0,0,0.85); transition: width 0.3s, height 0.3s, max-width 0.3s;">
              <div id="img-preview" style="width: 100%; height: 100%; background: url() center/cover no-repeat;"></div>
+             <!-- Retícula de tercios para encuadre simétrico -->
+             <div id="calibrator-grid" class="calibrator-reticle-grid" style="display: none;">
+                 <div></div><div></div><div></div>
+                 <div></div><div></div><div></div>
+                 <div></div><div></div><div></div>
+             </div>
         </div>
-        <div style="margin-top: 1.5rem; width: 90%; max-width: 550px; color: white;">
-            <label style="font-weight: 600; color: var(--unifreire-yellow); font-size: 0.9rem; display: block;">Nivel de Zoom (Acercar/Alejar): <input type="range" id="scale-z" min="100" max="300" value="100" style="width:100%; margin-top:0.4rem;"></label>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.6rem; width: 90%; max-width: 580px;">
+            <span id="calibrator-dim-label" style="font-size: 0.82rem; color: var(--admin-accent-neon); font-weight: 600;">Medida HD: 1920 × 1080 px (16:9)</span>
+            <button type="button" onclick="toggleCalibratorGrid()" class="btn-primary" style="padding: 0.3rem 0.75rem; font-size: 0.76rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);">Retícula Tercios</button>
+        </div>
+
+        <div style="margin-top: 1rem; width: 90%; max-width: 580px; color: white;">
+            <label style="font-weight: 600; color: var(--unifreire-yellow); font-size: 0.88rem; display: block;">Nivel de Zoom (<span id="zoom-val-label">100%</span> - Rango 50% a 300%): <input type="range" id="scale-z" min="50" max="300" step="5" value="100" style="width:100%; margin-top:0.35rem;"></label>
             <br>
-            <label style="font-weight: 600; color: var(--unifreire-yellow); font-size: 0.9rem; display: block;">Posición Vertical (Arriba/Abajo): <input type="range" id="pos-y" min="0" max="100" value="50" style="width:100%; margin-top:0.4rem;"></label>
+            <label style="font-weight: 600; color: var(--unifreire-yellow); font-size: 0.88rem; display: block;">Posición Vertical (Arriba/Abajo): <input type="range" id="pos-y" min="0" max="100" value="50" style="width:100%; margin-top:0.35rem;"></label>
             <br>
-            <label style="font-weight: 600; color: var(--unifreire-yellow); font-size: 0.9rem; display: block;">Posición Horizontal (Izquierda/Derecha): <input type="range" id="pos-x" min="0" max="100" value="50" style="width:100%; margin-top:0.4rem;"></label>
+            <label style="font-weight: 600; color: var(--unifreire-yellow); font-size: 0.88rem; display: block;">Posición Horizontal (Izquierda/Derecha): <input type="range" id="pos-x" min="0" max="100" value="50" style="width:100%; margin-top:0.35rem;"></label>
             <br>
-            <div style="display:flex; gap: 1rem; justify-content: center; margin-top: 0.5rem;">
-                <button class="btn-primary" id="image-modal-save-btn" onclick="saveAdjustedImage()" style="padding: 0.7rem 1.8rem; font-size: 0.95rem;">Guardar Encuadre</button>
-                <button class="btn-primary" style="background: #e74c3c; padding: 0.7rem 1.8rem; font-size: 0.95rem;" onclick="closeImageAdjuster()">Cancelar</button>
+            <div style="display:flex; gap: 1rem; justify-content: center; margin-top: 0.5rem; flex-wrap: wrap;">
+                <button class="btn-primary" id="image-modal-save-btn" onclick="saveAdjustedImage()" style="padding: 0.75rem 2rem; font-size: 0.95rem;">Guardar Encuadre</button>
+                <button class="btn-primary" style="background: #e74c3c; padding: 0.75rem 2rem; font-size: 0.95rem;" onclick="closeImageAdjuster()">Cancelar</button>
             </div>
         </div>
     </div>
@@ -554,6 +1018,7 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
         function resetInactivityTimer() {
             clearTimeout(inactivityTimer);
             inactivityTimer = setTimeout(() => {
+                sessionStorage.removeItem('unifreire_admin_token');
                 sessionStorage.removeItem('unifreire_admin_auth');
                 window.location.href = "index.html";
             }, 15 * 60 * 1000);
@@ -565,6 +1030,5 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
         resetInactivityTimer();
     </script>
 </body>
-
 
 </html>
