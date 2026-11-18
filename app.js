@@ -111,6 +111,10 @@ function decryptPayload(encryptedData) {
 // =========================================
 function recordTelemetryEvent(type, data) {
     try {
+        // Switch maestro: solo registrar cuando la telemetría esté activada
+        if (localStorage.getItem('unifreire_telemetry_active') !== 'true') {
+            return;
+        }
         const raw = localStorage.getItem('unifreire_analytics_events');
         let events = [];
         if (raw) {
@@ -145,6 +149,15 @@ function applyStoredTheme() {
             if (cfg.bgDark) root.style.setProperty('--bg-dark', cfg.bgDark);
             if (cfg.opacity !== undefined) root.style.setProperty('--orb-opacity', (cfg.opacity / 100).toString());
             if (cfg.blur !== undefined) root.style.setProperty('--orb-blur', `${cfg.blur}px`);
+
+            // Actualizar degradado ambiental en el fondo de la página
+            const body = document.body;
+            if (body && cfg.orb1 && cfg.orb2) {
+                body.style.backgroundImage = `
+                    radial-gradient(circle at 12% 18%, ${cfg.orb1} 0%, transparent 48%),
+                    radial-gradient(circle at 88% 82%, ${cfg.orb2} 0%, transparent 48%)
+                `;
+            }
         }
     } catch(e) {}
 }
@@ -319,7 +332,8 @@ function renderCareers(filter) {
         card.className = 'career-card-visual';
         
         // Obtener portada personalizada o defaultPortada / defaultBanner (independiente de unifreire_banner_)
-        const savedCover = localStorage.getItem(`unifreire_portada_${c.id}`) || c.defaultPortada || c.defaultBanner || 'assets/images/hero_bg.webp';
+        const fallbackCover = c.defaultPortada || c.defaultBanner || 'assets/images/hero_bg.webp';
+        const savedCover = localStorage.getItem(`unifreire_portada_${c.id}`) || fallbackCover;
         const coverPos = localStorage.getItem(`unifreire_portada_pos_${c.id}`) || 'center';
         const coverZoom = localStorage.getItem(`unifreire_portada_zoom_${c.id}`) || 'cover';
         const directUrl = (typeof getDirectUrl === 'function') ? getDirectUrl(savedCover) : savedCover;
@@ -330,6 +344,13 @@ function renderCareers(filter) {
         card.style.backgroundPosition = coverPos;
         card.style.backgroundSize = coverZoom.includes('%') ? coverZoom : 'cover';
         card.setAttribute('onclick', `viewCareer('${c.id}')`);
+
+        // Pre-carga con fallback para evitar que la imagen se quede cortada a la mitad en móviles
+        const imgPreloader = new Image();
+        imgPreloader.src = finalImgUrl;
+        imgPreloader.onerror = () => {
+            card.style.backgroundImage = `url('${fallbackCover}')`;
+        };
 
         const rvoeText = c.rvoe ? c.rvoe : 'Validez Oficial SEP';
 
@@ -373,17 +394,26 @@ function viewCareer(id) {
 
 async function cargarConfigDesdeNube() {
     try {
+        if (typeof GLOBAL_BACKEND_URL === 'undefined' || !GLOBAL_BACKEND_URL) return;
         const res = await fetch(GLOBAL_BACKEND_URL + "?action=obtenerConfig");
         const config = await res.json();
+        if (!config) return;
+
+        let needsCareersReRender = false;
         
         if (config.hero_banner) {
             localStorage.setItem('unifreire_hero_banner', typeof config.hero_banner === 'string' ? config.hero_banner : JSON.stringify(config.hero_banner));
-            applyHeroMedia(config.hero_banner);
+            if (typeof applyHeroMedia === 'function') applyHeroMedia(config.hero_banner);
         }
         
         if (config.carrusel && config.carrusel.length > 0) {
             const finalCarrusel = config.carrusel.map(getDirectUrl);
             localStorage.setItem('unifreire_carousel_images', JSON.stringify(finalCarrusel));
+            if (typeof renderCarousel === 'function') renderCarousel();
+        }
+
+        if (config.unifreire_carousel_mode) {
+            localStorage.setItem('unifreire_carousel_mode', config.unifreire_carousel_mode);
             if (typeof renderCarousel === 'function') renderCarousel();
         }
         
@@ -400,6 +430,29 @@ async function cargarConfigDesdeNube() {
             });
         }
 
+        // Portadas personalizadas sincronizadas desde la nube
+        if (config.portadas) {
+            Object.keys(config.portadas).forEach(id => {
+                const finalPortadaUrl = getDirectUrl(config.portadas[id]);
+                localStorage.setItem(`unifreire_portada_${id}`, finalPortadaUrl);
+                needsCareersReRender = true;
+            });
+        }
+
+        if (config.portadas_pos) {
+            Object.keys(config.portadas_pos).forEach(id => {
+                localStorage.setItem(`unifreire_portada_pos_${id}`, config.portadas_pos[id]);
+                needsCareersReRender = true;
+            });
+        }
+
+        if (config.portadas_zoom) {
+            Object.keys(config.portadas_zoom).forEach(id => {
+                localStorage.setItem(`unifreire_portada_zoom_${id}`, config.portadas_zoom[id]);
+                needsCareersReRender = true;
+            });
+        }
+
         if (config.unifreire_site_texts) {
             const siteTexts = typeof config.unifreire_site_texts === 'string' ? config.unifreire_site_texts : JSON.stringify(config.unifreire_site_texts);
             localStorage.setItem('unifreire_site_texts', siteTexts);
@@ -410,6 +463,11 @@ async function cargarConfigDesdeNube() {
             const themeCfg = typeof config.unifreire_theme_config === 'string' ? config.unifreire_theme_config : JSON.stringify(config.unifreire_theme_config);
             localStorage.setItem('unifreire_theme_config', themeCfg);
             applyStoredTheme();
+        }
+
+        if (needsCareersReRender && typeof renderCareers === 'function') {
+            const activeFilter = document.querySelector('.filter-btn.active')?.getAttribute('data-filter') || 'all';
+            renderCareers(activeFilter);
         }
     } catch(err) {
         console.error("Error sincronizando config desde la nube:", err);

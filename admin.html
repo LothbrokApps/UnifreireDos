@@ -305,10 +305,19 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                     <div>
                         <h2>Estadísticas & Métricas de Tráfico</h2>
                         <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-top: 0.3rem;">Telemetría en tiempo real de interacción estudiantil, conversión y retención web.</p>
+                        <p id="telemetry-reset-msg" style="color: var(--admin-accent-neon); font-size: 0.82rem; margin-top: 0.3rem; min-height: 1rem;"></p>
                     </div>
-                    <div style="display: flex; gap: 0.8rem; flex-wrap: wrap;">
-                        <button class="btn-primary" onclick="refreshAnalyticsData()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; background: rgba(255,255,255,0.08); border: 1px solid var(--admin-card-border);">⟳ Actualizar Datos</button>
-                        <button class="btn-accent" onclick="exportAnalyticsCSV()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem;">📥 Descargar Reporte CSV</button>
+                    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                        <div class="telemetry-switch-wrapper">
+                            <label class="telemetry-toggle">
+                                <input type="checkbox" id="telemetry-master-toggle" onchange="toggleTelemetryActive()">
+                                <span class="telemetry-slider"></span>
+                            </label>
+                            <span id="telemetry-status-badge" style="font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.7);">⚪ Medición Pausada (Modo Pruebas / 0 Tráfico)</span>
+                        </div>
+                        <button class="btn-primary" onclick="resetTelemetryMetricsToZero()" style="padding: 0.6rem 0.9rem; font-size: 0.8rem; background: rgba(231,76,60,0.18); border: 1px solid rgba(231,76,60,0.45); color: #ff7675;">🔄 Reiniciar a 0</button>
+                        <button class="btn-primary" onclick="refreshAnalyticsData()" style="padding: 0.6rem 1.1rem; font-size: 0.82rem; background: rgba(255,255,255,0.08); border: 1px solid var(--admin-card-border);">⟳ Actualizar Datos</button>
+                        <button class="btn-accent" onclick="exportAnalyticsCSV()" style="padding: 0.6rem 1.1rem; font-size: 0.82rem;">📥 Descargar Reporte CSV</button>
                     </div>
                 </div>
 
@@ -707,6 +716,26 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                     <p style="color: var(--text-secondary); max-width: 600px;">Las imágenes de tu carrusel se administran desde tu nube de Google Drive para no saturar la memoria web y agilizar la carga.</p>
                 </div>
                 
+                <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid var(--admin-card-border);">
+                    <h3 style="color: var(--unifreire-yellow); margin-bottom: 0.5rem; font-size: 1.05rem;">Tipo de Carrusel Activo (3 Modos Predefinidos)</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Elige la experiencia visual y cinemática para los visitantes en el Home:</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem;">
+                        <button type="button" id="carousel-mode-btn-zigzag" onclick="setCarouselMode('zigzag')" class="btn-primary" style="padding: 1rem; text-align: left; display: flex; flex-direction: column; gap: 0.4rem; border-radius: 10px;">
+                            <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">1. Dinámico Jaguar Zigzag</span>
+                            <span style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.3;">Marcos polaroid inclinados con auto-scroll infinito continuo y suave.</span>
+                        </button>
+                        <button type="button" id="carousel-mode-btn-coverflow" onclick="setCarouselMode('coverflow')" class="btn-primary" style="padding: 1rem; text-align: left; display: flex; flex-direction: column; gap: 0.4rem; border-radius: 10px;">
+                            <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">2. 3D Coverflow Perspectiva</span>
+                            <span style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.3;">Ángulo tridimensional inmersivo con tarjeta activa ampliada al centro.</span>
+                        </button>
+                        <button type="button" id="carousel-mode-btn-slider" onclick="setCarouselMode('slider')" class="btn-primary" style="padding: 1rem; text-align: left; display: flex; flex-direction: column; gap: 0.4rem; border-radius: 10px;">
+                            <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">3. Touch Snap Slider</span>
+                            <span style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.3;">Deslizamiento horizontal con imán (snap points) optimizado para móviles.</span>
+                        </button>
+                    </div>
+                    <p id="carousel-mode-msg" style="color: var(--admin-accent-neon); font-size: 0.82rem; margin-top: 0.8rem; min-height: 1.2rem; margin-bottom: 0;"></p>
+                </div>
+
                 <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
                     <h3 style="color: white; margin-bottom: 1rem;">1. Sube tu imagen a la Nube</h3>
                     <a href="https://drive.google.com/drive/folders/12XY5ckRVHqCrPhuChMljFoUFiRuOWa6a?usp=sharing" target="_blank" class="btn-primary" style="display:inline-block; text-decoration:none; margin-bottom: 1rem; background-color: #4285F4; border-color: #4285F4;">📁 Abrir Carpeta de Google Drive</a>
@@ -877,9 +906,9 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
     <script src="admin.js"></script>
 
     <!-- Image Position Modal Universal (Medidas exactas HD y Zoom 50% - 300%) -->
-    <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.94); z-index:10000; align-items:center; justify-content:center; flex-direction:column; padding: 1rem; box-sizing: border-box;">
-        <h3 id="image-modal-title" style="color:white; margin-bottom: 0.4rem; font-size: 1.5rem; text-align: center;">Ajustar Encuadre de Imagen</h3>
-        <p id="image-modal-desc" style="color: var(--text-secondary); margin-bottom: 1.2rem; text-align: center; font-size: 0.88rem;">Utiliza las barras para calibrar la posición exacta y el zoom con margen seguro.</p>
+    <div id="image-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.96); z-index:10000; align-items:center; justify-content:flex-start; flex-direction:column; padding: 1.5rem 1rem; box-sizing: border-box; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+        <h3 id="image-modal-title" style="color:white; margin-bottom: 0.4rem; font-size: 1.4rem; text-align: center;">Ajustar Encuadre de Imagen</h3>
+        <p id="image-modal-desc" style="color: var(--text-secondary); margin-bottom: 1rem; text-align: center; font-size: 0.85rem;">Utiliza las barras para calibrar la posición exacta y el zoom con margen seguro.</p>
         
         <div id="img-preview-box" style="width: 90%; height: 260px; max-width: 920px; border: 2px solid var(--unifreire-yellow); overflow: hidden; position: relative; border-radius: 14px; background: #000; box-shadow: 0 10px 35px rgba(0,0,0,0.85); transition: width 0.3s, height 0.3s, max-width 0.3s;">
              <div id="img-preview" style="width: 100%; height: 100%; background: url() center/cover no-repeat;"></div>
@@ -1070,6 +1099,23 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
     </div>
 
 
+    <script>
+        // Cierre de Sesión por Inactividad (15 minutos)
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                sessionStorage.removeItem('unifreire_admin_token');
+                sessionStorage.removeItem('unifreire_admin_auth');
+                window.location.href = "index.html";
+            }, 15 * 60 * 1000);
+        }
+        window.addEventListener('mousemove', resetInactivityTimer);
+        window.addEventListener('keypress', resetInactivityTimer);
+        window.addEventListener('click', resetInactivityTimer);
+        window.addEventListener('scroll', resetInactivityTimer);
+        resetInactivityTimer();
+    </script>
 </body>
 
 </html>

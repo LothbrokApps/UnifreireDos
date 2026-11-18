@@ -97,76 +97,146 @@ function getTelemetryEvents() {
         const raw = localStorage.getItem('unifreire_analytics_events');
         if (raw) {
             const arr = JSON.parse(raw);
-            if (Array.isArray(arr) && arr.length > 0) return arr;
+            if (Array.isArray(arr)) return arr;
         }
     } catch(e) {}
-    return generateBaselineTelemetry();
+    return [];
 }
 
-function generateBaselineTelemetry() {
-    // Datos baseline realistas basados en el histórico del campus
-    const hoursDist = [
-        0, 1, 1, 0, 0, 1, 2, 5, 12, 28, 42, 55, 48, 32, 38, 45, 52, 40, 36, 44, 38, 25, 14, 6
-    ];
-    const events = [];
-    const now = Date.now();
-    
-    hoursDist.forEach((count, hour) => {
-        for (let i = 0; i < count; i++) {
-            events.push({
-                type: 'visit_hour',
-                hour: hour,
-                timestamp: now - (23 - hour) * 3600000
-            });
+// Interruptor maestro de telemetría (Producción / Pruebas)
+function isTelemetryActive() {
+    return localStorage.getItem('unifreire_telemetry_active') === 'true';
+}
+
+function toggleTelemetryActive() {
+    const next = !isTelemetryActive();
+    localStorage.setItem('unifreire_telemetry_active', next.toString());
+    updateTelemetryStatusUI(next);
+    if (typeof UnifreireBroadcast !== 'undefined') {
+        UnifreireBroadcast.publish('telemetry_state_changed', { active: next });
+    }
+}
+
+function updateTelemetryStatusUI(isActive) {
+    const checkbox = document.getElementById('telemetry-master-toggle');
+    const label = document.getElementById('telemetry-status-badge');
+    if (checkbox) checkbox.checked = isActive;
+    if (label) {
+        if (isActive) {
+            label.innerText = '🟢 Medición en Vivo (Producción Activa)';
+            label.style.color = '#8cf82d';
+        } else {
+            label.innerText = '⚪ Medición Pausada (0 Tráfico / Pruebas)';
+            label.style.color = 'rgba(255, 255, 255, 0.6)';
         }
-    });
+    }
+}
 
-    const careerSeeds = [
-        { id: 'lic-enfermeria', count: 68 },
-        { id: 'lic-derecho', count: 54 },
-        { id: 'lic-criminologia', count: 46 },
-        { id: 'lic-administracion', count: 40 },
-        { id: 'ing-industrial', count: 35 },
-        { id: 'maestria-juicios-orales', count: 28 },
-        { id: 'lic-pedagogia', count: 24 },
-        { id: 'ing-sistemas', count: 22 }
-    ];
-
-    careerSeeds.forEach(item => {
-        for (let i = 0; i < item.count; i++) {
-            events.push({
-                type: 'career_click',
-                careerId: item.id,
-                timestamp: now - Math.floor(Math.random() * 86400000)
-            });
+function resetTelemetryMetricsToZero() {
+    if (confirm('¿Deseas reiniciar todas las métricas de tráfico y eventos a CERO (0)? Esta acción dejará los contadores listos para el lanzamiento a producción.')) {
+        localStorage.setItem('unifreire_visit_count', '0');
+        localStorage.setItem('unifreire_analytics_events', JSON.stringify([]));
+        renderAnalyticsAdmin();
+        const msg = document.getElementById('telemetry-reset-msg');
+        if (msg) {
+            msg.innerText = '✓ Contadores de analítica restablecidos a 0';
+            setTimeout(() => { if (msg.innerText.includes('✓')) msg.innerText = ''; }, 3000);
         }
-    });
+    }
+}
 
+// Sincronización robusta en la Nube (Google Apps Script / PocketBase)
+async function guardarConfigEnNube(key, value, statusEl) {
     try {
-        localStorage.setItem('unifreire_analytics_events', JSON.stringify(events));
-    } catch(e) {}
-    return events;
+        if (statusEl) {
+            statusEl.innerText = 'Sincronizando con la nube...';
+        }
+        
+        // 1. Sincronizar vía BroadcastChannel inmediatamente para todas las pestañas
+        if (typeof UnifreireBroadcast !== 'undefined') {
+            UnifreireBroadcast.publish('config_updated', { key, value });
+        }
+
+        // 2. Si no hay backend configurado, persistir localmente
+        if (typeof GLOBAL_BACKEND_URL === 'undefined' || !GLOBAL_BACKEND_URL) {
+            if (statusEl) {
+                statusEl.innerText = '✓ Guardado localmente';
+                setTimeout(() => { if (statusEl.innerText.includes('✓')) statusEl.innerText = ''; }, 3000);
+            }
+            return;
+        }
+
+        // 3. Enviar a Google Apps Script
+        const payload = {
+            action: 'guardarConfig',
+            key: key,
+            value: value
+        };
+
+        await fetch(GLOBAL_BACKEND_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (statusEl) {
+            statusEl.innerText = '✓ ¡Guardado en nube y local!';
+            setTimeout(() => { if (statusEl.innerText.includes('✓')) statusEl.innerText = ''; }, 3500);
+        }
+    } catch(err) {
+        console.warn('Sincronización en nube offline o pendiente:', err);
+        if (statusEl) {
+            statusEl.innerText = '✓ Guardado localmente (Offline)';
+            setTimeout(() => { if (statusEl.innerText.includes('✓')) statusEl.innerText = ''; }, 3000);
+        }
+    }
+}
+
+// Control de Modos de Carrusel (3 Modos Predefinidos)
+function setCarouselMode(mode) {
+    localStorage.setItem('unifreire_carousel_mode', mode);
+    updateCarouselModeUI(mode);
+    const msg = document.getElementById('carousel-mode-msg');
+    guardarConfigEnNube('unifreire_carousel_mode', mode, msg);
+}
+
+function updateCarouselModeUI(mode) {
+    const currentMode = mode || localStorage.getItem('unifreire_carousel_mode') || 'zigzag';
+    ['zigzag', 'coverflow', 'slider'].forEach(m => {
+        const btn = document.getElementById(`carousel-mode-btn-${m}`);
+        if (btn) {
+            if (m === currentMode) {
+                btn.style.borderColor = 'var(--unifreire-yellow)';
+                btn.style.background = 'rgba(255, 184, 28, 0.2)';
+                btn.style.color = '#ffffff';
+                btn.style.boxShadow = '0 0 15px rgba(255, 184, 28, 0.3)';
+            } else {
+                btn.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                btn.style.background = 'rgba(255, 255, 255, 0.04)';
+                btn.style.color = 'rgba(255, 255, 255, 0.7)';
+                btn.style.boxShadow = 'none';
+            }
+        }
+    });
 }
 
 function renderAnalyticsAdmin() {
     const events = getTelemetryEvents();
+    updateTelemetryStatusUI(isTelemetryActive());
 
-    // 1. Visitas Totales
+    // 1. Visitas Totales (Inicializado en 0 por defecto)
     let totalVisits = parseInt(localStorage.getItem('unifreire_visit_count') || '0');
-    if (totalVisits === 0) {
-        totalVisits = 1482;
-        localStorage.setItem('unifreire_visit_count', totalVisits.toString());
-    }
     const visitEl = document.getElementById('kpi-visitas');
     if (visitEl) visitEl.innerText = totalVisits.toLocaleString();
 
     // 2. Leads Totales
-    const leadsCount = (Array.isArray(allLeads) && allLeads.length > 0) ? allLeads.length : 58;
+    const leadsCount = (Array.isArray(allLeads)) ? allLeads.length : 0;
     const leadsEl = document.getElementById('kpi-leads');
     if (leadsEl) leadsEl.innerText = leadsCount.toLocaleString();
 
     // 3. Tasa de Conversión
-    const convRate = totalVisits > 0 ? ((leadsCount / totalVisits) * 100).toFixed(1) : '3.9';
+    const convRate = totalVisits > 0 ? ((leadsCount / totalVisits) * 100).toFixed(1) : '0.0';
     const convEl = document.getElementById('kpi-conversion');
     if (convEl) convEl.innerText = `${convRate}%`;
 
@@ -177,10 +247,10 @@ function renderAnalyticsAdmin() {
     });
 
     const sortedCareers = Object.keys(careerClicks).sort((a,b) => careerClicks[b] - careerClicks[a]);
-    const topCareerId = sortedCareers[0] || 'lic-enfermeria';
-    const topCareerName = (typeof CAREERS_DATA !== 'undefined' && CAREERS_DATA[topCareerId]) 
+    const topCareerId = sortedCareers[0] || '';
+    const topCareerName = (topCareerId && typeof CAREERS_DATA !== 'undefined' && CAREERS_DATA[topCareerId]) 
         ? CAREERS_DATA[topCareerId].name 
-        : 'Licenciatura en Enfermería';
+        : 'Sin interacción aún (0 clics)';
 
     const topCareerEl = document.getElementById('kpi-top-carrera');
     if (topCareerEl) topCareerEl.innerText = topCareerName;
@@ -189,7 +259,7 @@ function renderAnalyticsAdmin() {
     const hourlyCounts = new Array(24).fill(0);
     events.filter(e => e.type === 'visit_hour' || typeof e.hour === 'number').forEach(e => {
         const h = e.hour >= 0 && e.hour < 24 ? e.hour : new Date(e.timestamp).getHours();
-        hourlyCounts[h]++;
+        if (h >= 0 && h < 24) hourlyCounts[h]++;
     });
 
     renderHourlyChart(hourlyCounts);
@@ -685,24 +755,27 @@ function setupAdjusterModal(titleText, aspectType, directUrl, zoomVal, posX, pos
 
     if (aspectType === 'portada') {
         if (previewBox) {
-            previewBox.style.width = '260px';
-            previewBox.style.height = '346px'; // Proporción 3:4
-            previewBox.style.maxWidth = '90vw';
+            previewBox.style.width = '240px';
+            previewBox.style.height = '320px'; // Proporción 3:4
+            previewBox.style.maxWidth = '85vw';
+            previewBox.style.maxHeight = '38vh';
         }
         if (dimLabel) dimLabel.innerText = 'Medida Portada Home: 600 × 800 px (3:4)';
     } else if (aspectType === 'banner_carrera') {
         if (previewBox) {
             previewBox.style.width = '90%';
-            previewBox.style.height = '230px';
+            previewBox.style.height = '210px';
             previewBox.style.maxWidth = '900px';
+            previewBox.style.maxHeight = '32vh';
         }
         if (dimLabel) dimLabel.innerText = 'Medida Banner Carrera: 1600 × 520 px';
     } else {
         // Hero Principal HD 1920x1080
         if (previewBox) {
             previewBox.style.width = '90%';
-            previewBox.style.height = '260px';
+            previewBox.style.height = '230px';
             previewBox.style.maxWidth = '920px';
+            previewBox.style.maxHeight = '32vh';
         }
         if (dimLabel) dimLabel.innerText = 'Hero Banner Principal: 1920 × 1080 px HD (16:9)';
     }

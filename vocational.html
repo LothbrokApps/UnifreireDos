@@ -279,31 +279,18 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
             display: none; /* Hide radio */
         }
 
-        .result-box {
+        .result-horizontal-container {
             display: none;
-            text-align: center;
-            padding: 3rem;
+            padding: 1.8rem 1.4rem;
             border: 1px solid var(--unifreire-yellow);
-            border-radius: 12px;
-            background: rgba(0, 77, 54, 0.4);
-            animation: fadeInUp 0.8s ease;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-radius: 16px;
+            background: rgba(0, 30, 20, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            animation: fadeInUp 0.6s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
             position: relative;
             z-index: 10;
-        }
-
-        .result-box h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .result-box .career-match {
-            font-size: 2.2rem;
-            color: #FFE600;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 0 15px rgba(255, 230, 0, 0.5);
-            text-transform: uppercase;
         }
         
         #progress-bar-container {
@@ -362,17 +349,23 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
             <div id="dynamic-questions" style="position:relative;"></div>
         </form>
 
-        <div id="result-box" class="result-box">
-            <h2 style="color:white; font-size:1.6rem; font-weight:800;">¡Felicidades! Tu Perfil Jaguar ideal es:</h2>
-            <div id="match-career" class="career-match">Cargando perfil...</div>
-            <p style="margin-bottom: 1.5rem; font-size:1.05rem; color:var(--text-secondary); max-width:620px; margin-left:auto; margin-right:auto;">Tienes el talento, la visión y la mentalidad analítica que las mejores instituciones están buscando. A continuación, tu desglose psicométrico por áreas del conocimiento:</p>
+        <div id="result-box" class="result-horizontal-container">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 0.8rem;">
+                <div>
+                    <span style="font-size: 0.78rem; font-weight: 700; color: var(--unifreire-yellow); text-transform: uppercase; letter-spacing: 1px;">Diagnóstico Vocacional Completado</span>
+                    <h2 style="font-size: 1.35rem; color: #ffffff; margin: 0.15rem 0 0 0; font-weight: 800;">Tu Perfil Jaguar Ideal</h2>
+                </div>
+                <div style="background: linear-gradient(135deg, rgba(0,77,54,0.85), rgba(0,122,85,0.85)); border: 1.5px solid var(--unifreire-yellow); padding: 0.45rem 1.1rem; border-radius: 30px; font-weight: 700; font-size: 0.95rem; color: #ffffff; display: flex; align-items: center; gap: 0.45rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+                    <span>⭐</span> <span id="match-career" style="color: #FFE600; font-weight: 800;">Calculando...</span>
+                </div>
+            </div>
 
-            <!-- Afinidad Cuantitativa por Áreas -->
+            <!-- Desglose Horizontal de las 3 Áreas de Conocimiento -->
             <div id="affinity-results-container" class="affinity-result-grid"></div>
 
-            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:2rem;">
-                <button class="btn-accent" style="padding: 1rem 2rem; border-radius:30px; cursor:pointer;" onclick="goToCareer()">VER PLAN DE ESTUDIOS</button>
-                <a href="https://wa.me/528123631099" target="_blank" id="btn-inscribirme" class="btn-fosfo" style="display:flex; align-items:center; gap:0.5rem; text-decoration:none;">💬 ASESORÍA POR WHATSAPP</a>
+            <div style="display: flex; gap: 0.8rem; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 0.6rem;">
+                <button class="btn-accent" style="padding: 0.75rem 1.8rem; border-radius: 30px; cursor: pointer; font-size: 0.88rem; font-weight: 700;" onclick="goToCareer()">VER PLAN DE ESTUDIOS</button>
+                <a href="https://wa.me/528123631099" target="_blank" id="btn-inscribirme" class="btn-fosfo" style="display: flex; align-items: center; gap: 0.45rem; padding: 0.75rem 1.6rem; font-size: 0.85rem; text-decoration: none;">💬 ASESORÍA POR WHATSAPP</a>
             </div>
         </div>
     </div>
@@ -590,11 +583,14 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
             // Renderizar desglose de afinidades
             const affinityContainer = document.getElementById('affinity-results-container');
             if (affinityContainer) {
-                affinityContainer.innerHTML = areas.map(a => `
-                    <div class="affinity-area-card">
+                affinityContainer.innerHTML = areas.map((a, idx) => `
+                    <div class="affinity-area-card ${idx === 0 ? 'winner' : ''}">
                         <div class="affinity-area-header">
-                            <span>${a.icon} ${a.name}</span>
-                            <span style="color: var(--unifreire-yellow); font-weight:800;">${a.percentage}% Afinidad</span>
+                            <div class="affinity-area-title">
+                                <span>${a.icon}</span>
+                                <span>${a.name}</span>
+                            </div>
+                            <div class="affinity-area-score">${a.percentage}% Afinidad</div>
                         </div>
                         <div class="affinity-bar-track">
                             <div class="affinity-bar-fill" style="width: 0%;" data-target="${a.percentage}%"></div>

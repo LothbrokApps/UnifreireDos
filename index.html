@@ -129,8 +129,8 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
     
     <!-- Experiencia Jaguar Section -->
     <section id="experiencia-jaguar" style="padding: 5rem 5%; background: var(--bg-dark); position: relative; overflow: hidden;">
-        <!-- Glowing bg -->
-        <div style="position: absolute; top: -50px; left: -50px; width: 300px; height: 300px; background: rgba(255,184,28,0.1); filter: blur(80px); border-radius: 50%; z-index: 0;"></div>
+        <!-- Glowing bg conectado a plantilla institucional -->
+        <div style="position: absolute; top: -50px; left: -50px; width: 320px; height: 320px; background: var(--ambient-orb-2); filter: blur(var(--orb-blur)); border-radius: 50%; z-index: 0; pointer-events: none;"></div>
         
         <div style="position: relative; z-index: 1; text-align: center; margin-bottom: 3rem;">
             <h2 style="font-size: 2.5rem; color: var(--unifreire-yellow); margin-bottom: 1rem;">Experiencia Jaguar</h2>
@@ -212,7 +212,7 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                         pics = JSON.parse(localStorage.getItem('unifreire_carousel_images') || '[]');
                     } catch(e) {}
                     
-                    // Fallback to Drive images if none available (No stock photos)
+                    // Fallback a fotos institucionales
                     if(!pics || pics.length === 0) {
                         pics = [
                             'https://drive.google.com/thumbnail?id=12chFEcVdJVHqvlv3XWXl3T1CwqUQOEOB&sz=w1920-h1080',
@@ -222,21 +222,45 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                         ];
                     }
                     
-                    // Duplicate for seamless infinite scroll
-                    const combined = [...pics, ...pics, ...pics, ...pics]; 
+                    const mode = localStorage.getItem('unifreire_carousel_mode') || 'zigzag';
+                    track.className = 'scroll-track carousel-mode-' + mode;
+                    
+                    // En slider touch se usan fotos únicas; en zigzag y coverflow se duplican para ciclo continuo
+                    const combined = (mode === 'slider') ? [...pics] : [...pics, ...pics, ...pics, ...pics]; 
                     
                     let h = '';
-                    combined.forEach(p => {
+                    combined.forEach((p, idx) => {
                         const directUrl = typeof getDirectUrl === 'function' ? getDirectUrl(p) : p;
-                        // Usar contenedor con imagen que respeta referrerpolicy="no-referrer" para Facebook CDN y Drive
+                        const activeClass = (mode === 'coverflow' && idx % pics.length === 1) ? ' active-center' : '';
                         h += `
-                            <div class="scroll-item" onclick="openCarouselModal('${directUrl.replace(/'/g, "\'")}')">
+                            <div class="scroll-item${activeClass}" onclick="openCarouselModal('${directUrl.replace(/'/g, "\\'")}')">
                                 <img src="${directUrl}" alt="Experiencia Jaguar" referrerpolicy="no-referrer" loading="lazy" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='assets/images/hero_bg.webp';">
                             </div>
                         `;
                     });
                     
                     track.innerHTML = h;
+
+                    if (mode === 'coverflow') {
+                        const updateCoverflowCenter = () => {
+                            const items = track.querySelectorAll('.scroll-item');
+                            const center = container.scrollLeft + container.offsetWidth / 2;
+                            let closestItem = null;
+                            let minDist = Infinity;
+                            items.forEach(item => {
+                                const itemCenter = item.offsetLeft + item.offsetWidth / 2;
+                                const dist = Math.abs(center - itemCenter);
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    closestItem = item;
+                                }
+                            });
+                            items.forEach(item => item.classList.remove('active-center'));
+                            if (closestItem) closestItem.classList.add('active-center');
+                        };
+                        container.addEventListener('scroll', updateCoverflowCenter, { passive: true });
+                        setTimeout(updateCoverflowCenter, 150);
+                    }
                 };
 
                 (function() {
@@ -327,7 +351,7 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 
 
     <!-- Footer -->
-    <footer style="background: rgba(0,0,0,0.9); border-top: 1px solid rgba(255,184,28,0.3); padding: 4rem 5%; color: white; margin-top: auto;">
+    <footer style="background: var(--bg-dark); border-top: 1px solid rgba(255,184,28,0.3); padding: 4rem 5%; color: white; margin-top: auto;">
         <h3 style="color: var(--unifreire-yellow); margin-bottom: 2rem; font-size: 1.5rem; text-align: center;">Nuestros Planteles</h3>
         <div id="planteles-container">
         </div>
