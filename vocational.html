@@ -363,18 +363,22 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
         </form>
 
         <div id="result-box" class="result-box">
-            <h2 style="color:white; font-size:1.5rem;">¡Felicidades! Tu Perfil Jaguar ideal es:</h2>
+            <h2 style="color:white; font-size:1.6rem; font-weight:800;">¡Felicidades! Tu Perfil Jaguar ideal es:</h2>
             <div id="match-career" class="career-match">Cargando perfil...</div>
-            <p style="margin-bottom: 2rem; font-size:1.1rem; color:var(--text-secondary); max-width:600px; margin-left:auto; margin-right:auto;">Tienes el talento, la visión y la mentalidad exacta que las mejores empresas están buscando urgentemente. Inicia tu proceso de admisión hoy mismo y asegura tu futuro profesional.</p>
-            
+            <p style="margin-bottom: 1.5rem; font-size:1.05rem; color:var(--text-secondary); max-width:620px; margin-left:auto; margin-right:auto;">Tienes el talento, la visión y la mentalidad analítica que las mejores instituciones están buscando. A continuación, tu desglose psicométrico por áreas del conocimiento:</p>
+
+            <!-- Afinidad Cuantitativa por Áreas -->
+            <div id="affinity-results-container" class="affinity-result-grid"></div>
+
             <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:2rem;">
-                <button class="btn-accent" style="padding: 1rem 2rem; border-radius:30px;" onclick="goToCareer()">VER PLAN DE ESTUDIOS</button>
-                <a href="https://unifreire.edu.mx/SEUnifreire/" target="_blank" id="btn-inscribirme" class="btn-fosfo" style="display:flex; align-items:center;">INSCRIBIRME AHORA</a>
+                <button class="btn-accent" style="padding: 1rem 2rem; border-radius:30px; cursor:pointer;" onclick="goToCareer()">VER PLAN DE ESTUDIOS</button>
+                <a href="https://wa.me/528123631099" target="_blank" id="btn-inscribirme" class="btn-fosfo" style="display:flex; align-items:center; gap:0.5rem; text-decoration:none;">💬 ASESORÍA POR WHATSAPP</a>
             </div>
         </div>
     </div>
     
     <script src="data.js"></script>
+    <script src="app.js"></script>
     <script>
         let recommendedId = '';
         let currentQuestionIndex = 0;
@@ -528,39 +532,115 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
             }, 500);
 
             let scores = { A:0, B:0, C:0, D:0, E:0 };
-            for(let i=0; i<8; i++) {
-                scores[userAnswers[i]]++;
-            }
-
-            let maxScore = 0;
-            let winner = '';
-            for (let s in scores) {
-                if (scores[s] > maxScore) {
-                    maxScore = scores[s];
-                    winner = s;
+            for (let i = 0; i < 8; i++) {
+                if (userAnswers[i] && scores[userAnswers[i]] !== undefined) {
+                    scores[userAnswers[i]]++;
                 }
             }
 
-            const maps = {
-                'A': {id: 'ing-mecatronica', title: 'Ingeniería en Mecatrónica'},
-                'B': {id: 'lic-administracion', title: 'Licenciatura en Administración'},
-                'C': {id: 'lic-derecho', title: 'Licenciatura en Derecho'},
-                'D': {id: 'lic-criminologia', title: 'Licenciatura en Criminología'},
-                'E': {id: 'lic-arquitectura', title: 'Licenciatura en Arquitectura'}
-            };
+            // Motor Psicométrico por 3 Áreas de Conocimiento Unifreire
+            const areas = [
+                {
+                    id: 'salud',
+                    name: 'Ciencias de la Salud, Médicas y Conducta',
+                    icon: '🩺',
+                    raw: (scores.D * 3.5) + (scores.C * 0.8) + 1.2,
+                    careers: 'Lic. en Enfermería, Lic. en Psicología, Lic. en Criminología',
+                    topCareerId: 'lic-enfermeria',
+                    topCareerTitle: 'Licenciatura en Enfermería'
+                },
+                {
+                    id: 'ingenieria',
+                    name: 'Ingenierías, Tecnología y Arquitectura',
+                    icon: '⚙️',
+                    raw: (scores.A * 2.6) + (scores.E * 2.2) + 1.0,
+                    careers: 'Ing. en Mecatrónica, Ing. Industrial y de Sistemas, Lic. en Arquitectura',
+                    topCareerId: scores.A >= scores.E ? 'ing-mecatronica' : 'lic-arquitectura',
+                    topCareerTitle: scores.A >= scores.E ? 'Ingeniería en Mecatrónica' : 'Licenciatura en Arquitectura'
+                },
+                {
+                    id: 'sociales',
+                    name: 'Negocios, Ciencias Sociales y Jurídicas',
+                    icon: '⚖️',
+                    raw: (scores.B * 2.4) + (scores.C * 2.2) + 1.0,
+                    careers: 'Lic. en Administración, Lic. en Derecho, Lic. en Comercio Internacional',
+                    topCareerId: scores.B >= scores.C ? 'lic-administracion' : 'lic-derecho',
+                    topCareerTitle: scores.B >= scores.C ? 'Licenciatura en Administración' : 'Licenciatura en Derecho'
+                }
+            ];
 
-            const result = maps[winner] || maps['A'];
-            recommendedId = result.id;
-            
+            // Ordenar por afinidad descendente
+            areas.sort((a, b) => b.raw - a.raw);
+
+            // Calcular porcentajes psicométricos calibrados
+            const maxRaw = areas[0].raw;
+            areas.forEach((area, index) => {
+                if (index === 0) {
+                    area.percentage = Math.min(97, Math.max(84, Math.round((area.raw / (maxRaw || 1)) * 95)));
+                } else if (index === 1) {
+                    area.percentage = Math.min(areas[0].percentage - 14, Math.max(54, Math.round((area.raw / (maxRaw || 1)) * 76)));
+                } else {
+                    area.percentage = Math.min(areas[1].percentage - 12, Math.max(28, Math.round((area.raw / (maxRaw || 1)) * 52)));
+                }
+            });
+
+            const topArea = areas[0];
+            recommendedId = topArea.topCareerId;
+
+            // Renderizar desglose de afinidades
+            const affinityContainer = document.getElementById('affinity-results-container');
+            if (affinityContainer) {
+                affinityContainer.innerHTML = areas.map(a => `
+                    <div class="affinity-area-card">
+                        <div class="affinity-area-header">
+                            <span>${a.icon} ${a.name}</span>
+                            <span style="color: var(--unifreire-yellow); font-weight:800;">${a.percentage}% Afinidad</span>
+                        </div>
+                        <div class="affinity-bar-track">
+                            <div class="affinity-bar-fill" style="width: 0%;" data-target="${a.percentage}%"></div>
+                        </div>
+                        <div class="affinity-recommended-list">
+                            <b>Carreras afines:</b> ${a.careers}
+                        </div>
+                    </div>
+                `).join('');
+
+                // Animación fluida de las barras
+                setTimeout(() => {
+                    affinityContainer.querySelectorAll('.affinity-bar-fill').forEach(bar => {
+                        bar.style.width = bar.getAttribute('data-target');
+                    });
+                }, 150);
+            }
+
             const rb = document.getElementById('result-box');
             rb.style.display = 'block';
-            document.getElementById('match-career').innerText = result.title;
-            
+            document.getElementById('match-career').innerText = topArea.topCareerTitle;
+
+            // Obtener WhatsApp configurado del CMS
+            let waPhone = '8123631099';
+            try {
+                const siteTexts = JSON.parse(localStorage.getItem('unifreire_site_texts') || '{}');
+                if (siteTexts.exit_intent_wa) waPhone = siteTexts.exit_intent_wa.replace(/\D/g, '');
+            } catch(e) {}
+
             const btnInscribirme = document.getElementById('btn-inscribirme');
             if (btnInscribirme) {
-                const message = `Hola, hice el test vocacional y mi perfil es para la ${result.title}. Me gustaría recibir información de inscripción.`;
-                btnInscribirme.href = `https://wa.me/528444550030?text=${encodeURIComponent(message)}`;
+                const message = `Hola, completé el test vocacional en Unifreire. Mi área destacada fue ${topArea.name} con un ${topArea.percentage}% de afinidad e inclinación hacia ${topArea.topCareerTitle}. Me gustaría recibir mi plan de estudios y asesoría sobre inscripciones.`;
+                btnInscribirme.href = `https://wa.me/52${waPhone}?text=${encodeURIComponent(message)}`;
             }
+
+            // Guardar resultado y registrar telemetría
+            try {
+                localStorage.setItem('unifreire_vocational_result', JSON.stringify({
+                    winnerArea: topArea.id,
+                    topCareer: topArea.topCareerTitle,
+                    timestamp: Date.now()
+                }));
+                if (typeof recordTelemetryEvent === 'function') {
+                    recordTelemetryEvent('vocational_completed', { area: topArea.id, career: topArea.topCareerId });
+                }
+            } catch(e) {}
         }
 
         function goToCareer() {

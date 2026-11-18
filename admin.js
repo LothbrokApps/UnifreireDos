@@ -392,7 +392,11 @@ const DEFAULT_SITE_TEXTS = {
     costos_nota: "Planes cuatrimestrales flexibles con titulación directa y validez oficial SEP. Consulta facilidades y turnos en cada plantel.",
     modalidades_aclaracion: "Modalidad escolarizada matutina e intermedia (L-V) y Turno Mixto Ejecutivo (Sábado o Domingo)",
     footer_copy: "© 2026 UNIFREIRE. Todos los derechos reservados.",
-    footer_phone: "(844) 410-5762"
+    footer_phone: "(844) 410-5762",
+    exit_intent_active: true,
+    exit_intent_title: "🎓 ¿Aún no decides tu carrera?",
+    exit_intent_msg: "¿Tienes dudas sobre el plan de estudios o inscripciones? Habla directamente con un asesor académico por WhatsApp y recibe orientación personalizada en 1 minuto.",
+    exit_intent_wa: "8123631099"
 };
 
 function getSiteTexts() {
@@ -415,6 +419,10 @@ function loadSiteTextsToAdmin() {
     if (document.getElementById('cms-modalidades-aclaracion')) document.getElementById('cms-modalidades-aclaracion').value = texts.modalidades_aclaracion || '';
     if (document.getElementById('cms-footer-copy')) document.getElementById('cms-footer-copy').value = texts.footer_copy || '';
     if (document.getElementById('cms-footer-phone')) document.getElementById('cms-footer-phone').value = texts.footer_phone || '';
+    if (document.getElementById('cms-exit-intent-active')) document.getElementById('cms-exit-intent-active').checked = (texts.exit_intent_active !== false);
+    if (document.getElementById('cms-exit-intent-title')) document.getElementById('cms-exit-intent-title').value = texts.exit_intent_title || '';
+    if (document.getElementById('cms-exit-intent-msg')) document.getElementById('cms-exit-intent-msg').value = texts.exit_intent_msg || '';
+    if (document.getElementById('cms-exit-intent-wa')) document.getElementById('cms-exit-intent-wa').value = texts.exit_intent_wa || '';
 }
 
 function sanitizeText(raw) {
@@ -427,6 +435,26 @@ function sanitizeText(raw) {
     return raw.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 }
 
+function insertCmsTag(inputId, tag) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    const start = el.selectionStart || 0;
+    const end = el.selectionEnd || 0;
+    const text = el.value;
+    const selected = text.substring(start, end) || 'texto';
+    let replacement = '';
+    if (tag === 'b') replacement = `<b>${selected}</b>`;
+    else if (tag === 'i') replacement = `<i>${selected}</i>`;
+    else if (tag === 'neon') replacement = `<span style="color:#8cf82d">${selected}</span>`;
+    else if (tag === 'gold') replacement = `<span style="color:#FFB81C">${selected}</span>`;
+    else if (tag === 'br') replacement = `<br>`;
+
+    el.value = text.substring(0, start) + replacement + text.substring(end);
+    el.focus();
+    el.selectionStart = start + replacement.length;
+    el.selectionEnd = start + replacement.length;
+}
+
 function saveAllSiteTexts() {
     const texts = {
         hero_title: sanitizeText(document.getElementById('cms-hero-title')?.value.trim() || DEFAULT_SITE_TEXTS.hero_title),
@@ -437,11 +465,24 @@ function saveAllSiteTexts() {
         costos_nota: sanitizeText(document.getElementById('cms-costos-nota')?.value.trim() || DEFAULT_SITE_TEXTS.costos_nota),
         modalidades_aclaracion: sanitizeText(document.getElementById('cms-modalidades-aclaracion')?.value.trim() || DEFAULT_SITE_TEXTS.modalidades_aclaracion),
         footer_copy: sanitizeText(document.getElementById('cms-footer-copy')?.value.trim() || DEFAULT_SITE_TEXTS.footer_copy),
-        footer_phone: sanitizeText(document.getElementById('cms-footer-phone')?.value.trim() || DEFAULT_SITE_TEXTS.footer_phone)
+        footer_phone: sanitizeText(document.getElementById('cms-footer-phone')?.value.trim() || DEFAULT_SITE_TEXTS.footer_phone),
+        exit_intent_active: document.getElementById('cms-exit-intent-active') ? document.getElementById('cms-exit-intent-active').checked : true,
+        exit_intent_title: sanitizeText(document.getElementById('cms-exit-intent-title')?.value.trim() || DEFAULT_SITE_TEXTS.exit_intent_title),
+        exit_intent_msg: sanitizeText(document.getElementById('cms-exit-intent-msg')?.value.trim() || DEFAULT_SITE_TEXTS.exit_intent_msg),
+        exit_intent_wa: sanitizeText(document.getElementById('cms-exit-intent-wa')?.value.trim() || DEFAULT_SITE_TEXTS.exit_intent_wa)
     };
 
     localStorage.setItem('unifreire_site_texts', JSON.stringify(texts));
     localStorage.setItem('unifreire_cache_version', Date.now().toString());
+
+    // BroadcastChannel sync en tiempo real
+    if ('BroadcastChannel' in window) {
+        try {
+            const bc = new BroadcastChannel('unifreire_channel');
+            bc.postMessage({ type: 'TEXTS_UPDATED', texts: texts });
+            bc.close();
+        } catch(e) {}
+    }
 
     const statusMsg = document.getElementById('cms-status-msg');
     if (statusMsg) {
@@ -583,12 +624,42 @@ function saveThemeCustomizer() {
     if (typeof guardarConfigEnNube === 'function') {
         guardarConfigEnNube('unifreire_theme_config', JSON.stringify(cfg), msg);
     }
+
+    if ('BroadcastChannel' in window) {
+        try {
+            const bc = new BroadcastChannel('unifreire_channel');
+            bc.postMessage({ type: 'THEME_UPDATED', theme: cfg });
+            bc.close();
+        } catch(e) {}
+    }
+
     alert('Plantilla e iluminación ambiental aplicadas correctamente.');
 }
 
 function resetThemeDefaults() {
     selectThemePreset('jaguar');
     saveThemeCustomizer();
+}
+
+// ==========================================================================
+// COMPRESIÓN DE IMÁGENES EN CLIENTE (WEB WORKER / BROWSER-IMAGE-COMPRESSION)
+// ==========================================================================
+async function compressImageClientSide(file, maxWidthOrHeight = 1920, quality = 0.82) {
+    if (typeof imageCompression !== 'undefined' && file instanceof File) {
+        const options = {
+            maxSizeMB: 1.2,
+            maxWidthOrHeight: maxWidthOrHeight,
+            useWebWorker: true,
+            initialQuality: quality
+        };
+        try {
+            return await imageCompression(file, options);
+        } catch(e) {
+            console.warn("Compresión WebWorker falló, usando archivo original:", e);
+            return file;
+        }
+    }
+    return file;
 }
 
 // ==========================================================================

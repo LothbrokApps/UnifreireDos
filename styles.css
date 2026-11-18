@@ -1774,3 +1774,202 @@ body {
   }
 }
 
+/* ========================================================
+   EXIT-INTENT GADGET (CAPTACIÓN DE ABANDONO CON WHATSAPP)
+   ======================================================== */
+.exit-intent-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.2rem;
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.exit-intent-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.exit-intent-card {
+  background: linear-gradient(145deg, #121814, #0b0e0c);
+  border: 1px solid rgba(255, 184, 28, 0.45);
+  border-radius: 24px;
+  max-width: 520px;
+  width: 100%;
+  padding: 2.2rem 2rem 2rem 2rem;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(255, 184, 28, 0.2);
+  transform: translateY(20px) scale(0.96);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.exit-intent-overlay.active .exit-intent-card {
+  transform: translateY(0) scale(1);
+}
+
+.exit-intent-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.exit-intent-close:hover {
+  background: rgba(231, 76, 60, 0.3);
+  transform: scale(1.08);
+}
+
+.exit-intent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  background: rgba(255, 184, 28, 0.15);
+  border: 1px solid rgba(255, 184, 28, 0.35);
+  color: var(--unifreire-yellow);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.exit-intent-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.8rem 0;
+  line-height: 1.25;
+}
+
+.exit-intent-msg {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.55;
+  margin: 0 0 1.6rem 0;
+}
+
+.exit-intent-wa-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  background: linear-gradient(135deg, #25D366, #128C7E);
+  color: #ffffff;
+  padding: 0.95rem 1.8rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+  transition: transform 0.25s, box-shadow 0.25s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.exit-intent-wa-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(37, 211, 102, 0.55);
+}
+
+/* ========================================================
+   BARRA DE FORMATO VISUAL EN MINI-CMS (TEXTOS ENRIQUECIDOS)
+   ======================================================== */
+.cms-toolbar {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.cms-toolbar-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  font-weight: 600;
+}
+
+.cms-toolbar-btn:hover {
+  background: rgba(140, 248, 45, 0.15);
+  border-color: var(--admin-accent-neon);
+  color: var(--admin-accent-neon);
+}
+
+/* ========================================================
+   TEST VOCACIONAL CUANTITATIVO POR ÁREAS (AFINIDAD)
+   ======================================================== */
+.affinity-result-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.1rem;
+  margin: 1.8rem 0;
+  text-align: left;
+}
+
+.affinity-area-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.1rem;
+}
+
+.affinity-area-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.affinity-bar-track {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.affinity-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #004D36, #8cf82d);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.affinity-recommended-list {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.affinity-recommended-list b {
+  color: var(--unifreire-yellow);
+}
+

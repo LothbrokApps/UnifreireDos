@@ -444,6 +444,13 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                     
                     <div class="cms-field-group">
                         <label class="cms-field-label">Titular Principal del Hero <span>(Texto grande sobre el video de bienvenida)</span></label>
+                        <div class="cms-toolbar">
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-hero-title', 'b')"><b>B</b> Negrita</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-hero-title', 'i')"><i>I</i> Cursiva</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-hero-title', 'neon')">★ Neón</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-hero-title', 'gold')">★ Dorado</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-hero-title', 'br')">↵ Salto</button>
+                        </div>
                         <input type="text" id="cms-hero-title" class="cms-input" placeholder="Tu Historia empieza aquí">
                     </div>
 
@@ -454,6 +461,13 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 
                     <div class="cms-field-group">
                         <label class="cms-field-label">Descripción de Experiencia Jaguar <span>(Texto informativo debajo del título)</span></label>
+                        <div class="cms-toolbar">
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exp-desc', 'b')"><b>B</b> Negrita</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exp-desc', 'i')"><i>I</i> Cursiva</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exp-desc', 'neon')">★ Neón</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exp-desc', 'gold')">★ Dorado</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exp-desc', 'br')">↵ Salto</button>
+                        </div>
                         <textarea id="cms-exp-desc" class="cms-textarea" rows="2" placeholder="Conoce más sobre la vida estudiantil, eventos institucionales y la garra que nos distingue. Ser Jaguar es llevar el éxito en el ADN."></textarea>
                     </div>
                 </div>
@@ -481,6 +495,12 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 
                     <div class="cms-field-group">
                         <label class="cms-field-label">Nota Informativa de Inscripción y Pagos <span>(Aclaración general para nuevos ingresos)</span></label>
+                        <div class="cms-toolbar">
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-costos-nota', 'b')"><b>B</b> Negrita</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-costos-nota', 'i')"><i>I</i> Cursiva</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-costos-nota', 'neon')">★ Neón</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-costos-nota', 'gold')">★ Dorado</button>
+                        </div>
                         <textarea id="cms-costos-nota" class="cms-textarea" rows="2" placeholder="Planes cuatrimestrales flexibles con titulación directa y validez oficial SEP. Consulta facilidades y turnos en cada plantel."></textarea>
                     </div>
 
@@ -503,6 +523,43 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
                     <div class="cms-field-group">
                         <label class="cms-field-label">Teléfono Conmutador Central</label>
                         <input type="text" id="cms-footer-phone" class="cms-input" placeholder="(844) 410-5762">
+                    </div>
+                </div>
+
+                <!-- 5. Gadget Exit-Intent (Captación de Abandono) -->
+                <div class="cms-section-card">
+                    <h3>5. Gadget de Captación Exit-Intent (Anti-Abandono)</h3>
+                    <p class="desc">Activa una ventana emergente inteligente cuando el usuario intenta salir o cerrar la página para canalizarlo a WhatsApp con un asesor.</p>
+
+                    <div class="cms-field-group" style="display: flex; align-items: center; gap: 0.75rem;">
+                        <input type="checkbox" id="cms-exit-intent-active" style="width: 20px; height: 20px; accent-color: var(--admin-accent-neon); cursor: pointer;" checked>
+                        <label for="cms-exit-intent-active" style="font-size: 0.95rem; font-weight: 600; cursor: pointer; color: #fff;">Activar ventana emergente de retención (Exit-Intent)</label>
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Título del Mensaje de Retención</label>
+                        <div class="cms-toolbar">
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exit-intent-title', 'b')"><b>B</b></button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exit-intent-title', 'neon')">★ Neón</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exit-intent-title', 'gold')">★ Dorado</button>
+                        </div>
+                        <input type="text" id="cms-exit-intent-title" class="cms-input" placeholder="🎓 ¿Aún no decides tu carrera?">
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Texto Persuasivo / Oferta de Asesoría</label>
+                        <div class="cms-toolbar">
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exit-intent-msg', 'b')"><b>B</b></button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exit-intent-msg', 'neon')">★ Neón</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exit-intent-msg', 'gold')">★ Dorado</button>
+                            <button type="button" class="cms-toolbar-btn" onclick="insertCmsTag('cms-exit-intent-msg', 'br')">↵ Salto</button>
+                        </div>
+                        <textarea id="cms-exit-intent-msg" class="cms-textarea" rows="2" placeholder="¿Tienes dudas sobre el plan de estudios o inscripciones? Habla directamente con un asesor académico por WhatsApp y recibe orientación personalizada en 1 minuto."></textarea>
+                    </div>
+
+                    <div class="cms-field-group">
+                        <label class="cms-field-label">Número de WhatsApp de Asesoría <span>(Solo números, ej: 8123631099)</span></label>
+                        <input type="text" id="cms-exit-intent-wa" class="cms-input" placeholder="8123631099">
                     </div>
                 </div>
 
@@ -815,6 +872,8 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
             });
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
     <script src="admin.js"></script>
 
     <!-- Image Position Modal Universal (Medidas exactas HD y Zoom 50% - 300%) -->

@@ -184,6 +184,17 @@ function applyStoredSiteTexts() {
         if (footerP && texts.footer_copy) {
             footerP.innerHTML = texts.footer_copy;
         }
+
+        // 5. Exit Intent Gadget texts
+        const exitTitle = document.querySelector('.exit-intent-title');
+        const exitMsg = document.querySelector('.exit-intent-msg');
+        const exitWa = document.querySelector('.exit-intent-wa-btn');
+        if (exitTitle && texts.exit_intent_title) exitTitle.innerHTML = texts.exit_intent_title;
+        if (exitMsg && texts.exit_intent_msg) exitMsg.innerHTML = texts.exit_intent_msg;
+        if (exitWa && texts.exit_intent_wa) {
+            const waNumber = texts.exit_intent_wa.replace(/\D/g, '');
+            exitWa.href = `https://wa.me/52${waNumber}?text=${encodeURIComponent('Hola, estaba visitando el sitio de Unifreire y me gustaría recibir orientación sobre las carreras y planes de estudio.')}`;
+        }
     } catch(e) {}
 }
 
@@ -204,6 +215,9 @@ document.addEventListener('DOMContentLoaded', () => {
     applyStoredTheme();
     applyStoredSiteTexts();
     cargarConfigDesdeNube();
+    initExitIntent();
+    initBroadcastSync();
+    if (typeof UnifreireLocalDB !== 'undefined') UnifreireLocalDB.syncOfflineLeads();
     
     // 4. Hamburger Menu Logic
     const hamburger = document.getElementById('hamburger-menu');
@@ -441,9 +455,252 @@ document.addEventListener('DOMContentLoaded', () => {
         img.classList.add('skeleton-bg');
         img.addEventListener('load', () => {
             img.classList.remove('skeleton-bg');
+            if (img.id === 'main-hero-img') autoTuneAmbientLightsFromImage(img);
         });
         img.addEventListener('error', () => {
             img.classList.remove('skeleton-bg');
         });
     });
 });
+
+// =========================================
+// EXIT-INTENT GADGET (CAPTACIÓN DE ABANDONO)
+// =========================================
+function initExitIntent() {
+    let siteTexts = {};
+    try {
+        const stored = localStorage.getItem('unifreire_site_texts');
+        if (stored) siteTexts = JSON.parse(stored);
+    } catch(e) {}
+
+    // Si el administrador lo desactivó explícitamente, no inicializar
+    if (siteTexts.exit_intent_active === false) return;
+
+    // Solo mostrar una vez por sesión para no resultar invasivo
+    if (sessionStorage.getItem('unifreire_exit_shown')) return;
+
+    // Inyectar modal si no existe
+    let overlay = document.getElementById('exit-intent-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'exit-intent-overlay';
+        overlay.className = 'exit-intent-overlay';
+
+        const title = siteTexts.exit_intent_title || '🎓 ¿Aún no decides tu carrera?';
+        const msg = siteTexts.exit_intent_msg || '¿Tienes dudas sobre el plan de estudios o inscripciones? Habla directamente con un asesor académico por WhatsApp y recibe orientación personalizada en 1 minuto.';
+        const waNumber = (siteTexts.exit_intent_wa || '8123631099').replace(/\D/g, '');
+        const waLink = `https://wa.me/52${waNumber}?text=${encodeURIComponent('Hola, estaba visitando el sitio de Unifreire y me gustaría recibir orientación sobre las carreras y planes de estudio.')}`;
+
+        overlay.innerHTML = `
+            <div class="exit-intent-card" role="dialog" aria-modal="true">
+                <button type="button" class="exit-intent-close" id="exit-intent-close-btn" aria-label="Cerrar">&times;</button>
+                <div class="exit-intent-badge">⚡ ORIENTACIÓN ACADÉMICA INMEDIATA</div>
+                <h2 class="exit-intent-title">${title}</h2>
+                <p class="exit-intent-msg">${msg}</p>
+                <a href="${waLink}" target="_blank" class="exit-intent-wa-btn" id="exit-intent-wa-action">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                    Hablar con un Asesor por WhatsApp
+                </a>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const closeBtn = document.getElementById('exit-intent-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeExitIntent);
+        }
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeExitIntent();
+        });
+        const waAction = document.getElementById('exit-intent-wa-action');
+        if (waAction) {
+            waAction.addEventListener('click', () => {
+                recordTelemetryEvent('exit_intent_whatsapp_click', { url: waAction.href });
+                closeExitIntent();
+            });
+        }
+    }
+
+    function showExitIntent() {
+        if (sessionStorage.getItem('unifreire_exit_shown')) return;
+        sessionStorage.setItem('unifreire_exit_shown', 'true');
+        overlay.classList.add('active');
+        recordTelemetryEvent('exit_intent_shown');
+    }
+
+    function closeExitIntent() {
+        overlay.classList.remove('active');
+    }
+
+    // 1. Detección en Desktop (Salida del puntero hacia la barra de navegación)
+    document.addEventListener('mouseleave', (e) => {
+        if (e.clientY <= 10) {
+            showExitIntent();
+        }
+    });
+
+    // 2. Detección en Móvil (Scroll reverso rápido tras revisar contenido o inactividad)
+    let lastScrollTop = 0;
+    let maxScroll = 0;
+    let mobileTimer = setTimeout(() => {
+        if (window.innerWidth <= 768 && maxScroll > 400) {
+            showExitIntent();
+        }
+    }, 45000);
+
+    window.addEventListener('scroll', () => {
+        const st = window.pageYOffset || document.documentElement.scrollTop;
+        if (st > maxScroll) maxScroll = st;
+        // Si el usuario bajó bastante y hace un scroll rápido hacia arriba
+        if (st < lastScrollTop - 120 && maxScroll > 600 && window.innerWidth <= 768) {
+            showExitIntent();
+        }
+        lastScrollTop = st <= 0 ? 0 : st;
+    }, { passive: true });
+}
+
+// =========================================
+// SINCRONIZACIÓN EN TIEMPO REAL MULTI-PESTAÑA / DISPOSITIVOS (BROADCASTCHANNEL)
+// =========================================
+function initBroadcastSync() {
+    if (!('BroadcastChannel' in window)) return;
+    try {
+        const channel = new BroadcastChannel('unifreire_channel');
+        channel.onmessage = (event) => {
+            const data = event.data;
+            if (!data || !data.type) return;
+
+            if (data.type === 'THEME_UPDATED') {
+                applyStoredTheme();
+            } else if (data.type === 'TEXTS_UPDATED') {
+                applyStoredSiteTexts();
+            } else if (data.type === 'HERO_UPDATED') {
+                const savedHero = localStorage.getItem('unifreire_hero_banner');
+                applyHeroMedia(savedHero);
+            } else if (data.type === 'CAROUSEL_UPDATED') {
+                if (typeof window.renderCarousel === 'function') window.renderCarousel();
+            }
+        };
+    } catch(e) {}
+}
+
+// =========================================
+// ALMACÉN OFFLINE-FIRST (INDEXEDDB - DEXIE ARCHITECTURE)
+// =========================================
+const UnifreireLocalDB = {
+    dbName: 'UnifreireOfflineStore',
+    dbVersion: 1,
+    db: null,
+
+    async getDB() {
+        if (this.db) return this.db;
+        return new Promise((resolve) => {
+            if (!('indexedDB' in window)) return resolve(null);
+            const req = indexedDB.open(this.dbName, this.dbVersion);
+            req.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('leads')) {
+                    db.createObjectStore('leads', { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains('cache')) {
+                    db.createObjectStore('cache', { keyPath: 'key' });
+                }
+            };
+            req.onsuccess = (e) => {
+                this.db = e.target.result;
+                resolve(this.db);
+            };
+            req.onerror = () => resolve(null);
+        });
+    },
+
+    async saveOfflineLead(leadData) {
+        try {
+            const db = await this.getDB();
+            if (!db) {
+                const leads = JSON.parse(localStorage.getItem('unifreire_offline_leads') || '[]');
+                leads.push({ ...leadData, timestamp: Date.now() });
+                localStorage.setItem('unifreire_offline_leads', JSON.stringify(leads));
+                return;
+            }
+            const tx = db.transaction('leads', 'readwrite');
+            tx.objectStore('leads').add({ ...leadData, timestamp: Date.now() });
+        } catch(e) {}
+    },
+
+    async syncOfflineLeads() {
+        if (!navigator.onLine) return;
+        try {
+            const db = await this.getDB();
+            let pendingLeads = [];
+            if (db) {
+                pendingLeads = await new Promise((resolve) => {
+                    const tx = db.transaction('leads', 'readonly');
+                    const req = tx.objectStore('leads').getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
+            } else {
+                pendingLeads = JSON.parse(localStorage.getItem('unifreire_offline_leads') || '[]');
+            }
+
+            if (pendingLeads && pendingLeads.length > 0) {
+                for (const lead of pendingLeads) {
+                    try {
+                        const encrypted = encryptPayload(lead);
+                        await fetch(GLOBAL_BACKEND_URL + "?action=registrarProspecto", {
+                            method: "POST",
+                            mode: "no-cors",
+                            headers: { "Content-Type": "text/plain" },
+                            body: encrypted
+                        });
+                    } catch(err) {}
+                }
+                if (db) {
+                    const txClear = db.transaction('leads', 'readwrite');
+                    txClear.objectStore('leads').clear();
+                }
+                localStorage.removeItem('unifreire_offline_leads');
+            }
+        } catch(e) {}
+    }
+};
+
+window.addEventListener('online', () => {
+    UnifreireLocalDB.syncOfflineLeads();
+});
+
+// =========================================
+// RECONOCIMIENTO Y CALIBRACIÓN DE LUCES AMBIENTALES DINÁMICAS (COLORTHIEF CANVAS ENGINE)
+// =========================================
+function autoTuneAmbientLightsFromImage(imgElement) {
+    if (!imgElement || !imgElement.complete || !imgElement.naturalWidth) return;
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 10;
+        canvas.height = 10;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imgElement, 0, 0, 10, 10);
+        const imgData = ctx.getImageData(0, 0, 10, 10).data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < imgData.length; i += 4) {
+            const brightness = (imgData[i] + imgData[i+1] + imgData[i+2]) / 3;
+            if (brightness > 30 && brightness < 235) {
+                r += imgData[i];
+                g += imgData[i+1];
+                b += imgData[i+2];
+                count++;
+            }
+        }
+        if (count > 0) {
+            r = Math.round(r / count);
+            g = Math.round(g / count);
+            b = Math.round(b / count);
+            const dynamicColor = `rgb(${r}, ${g}, ${b})`;
+            const cfg = JSON.parse(localStorage.getItem('unifreire_theme_config') || '{}');
+            if (cfg.autoPalette) {
+                document.documentElement.style.setProperty('--ambient-orb-1', dynamicColor);
+            }
+        }
+    } catch(e) {}
+}

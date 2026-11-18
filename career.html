@@ -397,6 +397,7 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
     </div>
 
     <script src="data.js"></script>
+    <script src="app.js"></script>
     <script>
         function applyStoredTheme() {
             try {
@@ -431,6 +432,8 @@ src="https://www.facebook.com/tr?id=1531720812332605&ev=PageView&noscript=1"
 
         document.addEventListener('DOMContentLoaded', () => {
             applyStoredTheme();
+            if (typeof initExitIntent === 'function') initExitIntent();
+            if (typeof initBroadcastSync === 'function') initBroadcastSync();
             const id = localStorage.getItem('carreraSeleccionada');
             if(!id || !CAREERS_DATA[id]) {
                 window.location.href = 'index.html';
